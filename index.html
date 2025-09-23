@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Interactive Chess Piece Tours: Knight, Rook, Bishop, Queen</title>
+<style>
+  body {
+    background: #101820;
+    color: #f0f0f0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0; 
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    user-select: none;
+    min-height: 100vh;
+  }
+  h1 {
+    margin-bottom: 0.2rem;
+    text-align: center;
+  }
+  h2 {
+    margin-top: 0;
+    font-weight: 400;
+    color: #0ff;
+  }
+  .board {
+    display: grid;
+    grid-template-columns: repeat(8, 64px);
+    grid-template-rows: repeat(8, 64px);
+    border: 3px solid #0ff;
+    box-shadow: 0 0 20px #0ff88bb;
+    margin: 1rem 0 1.5rem;
+  }
+  .square {
+    width: 64px;
+    height: 64px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid #0ff;
+    font-weight: bold;
+    font-size: 1.1rem;
+    transition: background 0.4s ease, color 0.4s ease;
+    position: relative;
+    cursor: default;
+  }
+  .square.light {
+    background: #aee7ff;
+    color: #001f3f;
+  }
+  .square.dark {
+    background: #004466;
+  }
+  .square.current {
+    background: linear-gradient(135deg, #ffd700cc, #ffee7588) !important;
+    color: #101010 !important;
+    box-shadow: 0 0 12px 5px #ffdd00cc;
+    position: relative;
+    z-index: 10;
+    cursor: pointer;
+  }
+  .square.visited {
+    background: #00cc88c9;
+    color: #004422;
+  }
+  .square.highlight-backtrack {
+    background: #ff444466 !important;
+    color: #500000 !important;
+  }
+  .move-number {
+    position: absolute;
+    bottom: 4px;
+    right: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    opacity: 0.85;
+    user-select: none;
+  }
+  .controls, .extra-controls, .piece-controls {
+    margin-top: 0.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    justify-content: center;
+  }
+  button, select, input[type=range] {
+    background: #0ff;
+    color: #003333;
+    border: none;
+    padding: 0.5rem 1rem;
+    font-weight: 700;
+    font-size: 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    box-shadow: 0 0 10px #0ff88cc;
+    transition: background 0.3s ease;
+  }
+  button:disabled, select:disabled, input[type=range]:disabled {
+    background: #005050;
+    color: #003333aa;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  button:hover:not(:disabled), select:hover:not(:disabled), input[type=range]:hover:not(:disabled) {
+    background: #33ffff;
+  }
+  label {
+    font-weight: 700;
+    font-size: 1.0rem;
+    margin-right: 0.5rem;
+    display: flex;
+    align-items: center;
+  }
+  #status {
+    margin-top: 0.8rem;
+    font-weight: 600;
+    font-size: 1.1rem;
+    min-height: 1.3em;
+    color: #0ff;
+    text-align: center;
+  }
+  #infoBox {
+    max-width: 560px;
+    text-align: center;
+    font-size: 0.9rem;
+    color: #a0f0f0aa;
+    margin: 1rem 0 0;
+    user-select: text;
+  }
+  #speedLabel, #stepJumpLabel {
+    user-select: none;
+    font-size: 0.9rem;
+    margin-left: 0.4rem;
+    font-weight: 600;
+    color: #0cc;
+  }
+  select#pieceSelect {
+    min-width: 120px;
+  }
+  [data-tooltip] {
+    position: relative;
+  }
+  [data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #0ffbbdd;
+    color: #002222;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 0.2s ease;
+    z-index: 10000;
+  }
+</style>
+</head>
+<body>
+<h1>Interactive Chess Piece Tours</h1>
+<h2>Knight, Rook, Bishop, Queen - Fastest Algorithms Visualization</h2>
+
+<div class="piece-controls" role="group" aria-label="Piece Selection">
+  <label for="pieceSelect" data-tooltip="Select which piece's tour to visualize">Piece:</label>
+  <select id="pieceSelect" aria-label="Select chess piece for tour">
+    <option value="knight">Knight</option>
+    <option value="rook">Rook</option>
+    <option value="bishop">Bishop (color toggled)</option>
+    <option value="queen">Queen (combined paths)</option>
+  </select>
+</div>
+
+<div>
+  <label for="startPos" data-tooltip="Choose any starting position on the board">Start Position:</label>
+  <select id="startPos" aria-label="Choose starting position on chessboard"></select>
+</div>
+
+<div class="controls" role="group" aria-label="Primary Controls">
+  <button id="startBtn" data-tooltip="Start or resume animation (Space)">Start</button>
+  <button id="pauseBtn" data-tooltip="Pause animation (Space)" disabled>Pause</button>
+  <button id="stepBackBtn" data-tooltip="Step backward one move (Arrow Left)" disabled>Step Back</button>
+  <button id="stepForwardBtn" data-tooltip="Step forward one move (Arrow Right)" disabled>Step Forward</button>
+  <button id="resetBtn" data-tooltip="Reset animation to initial state (R)" disabled>Reset</button>
+</div>
+
+<div class="extra-controls" role="group" aria-label="Additional Controls">
+  <label for="speedRange" data-tooltip="Adjust animation speed">Speed:<span id="speedLabel">400 ms</span></label>
+  <input type="range" id="speedRange" min="50" max="1200" step="50" value="400" aria-valuemin="50" aria-valuemax="1200" aria-valuenow="400" aria-label="Animation speed control in milliseconds">
+  
+  <label for="stepJump" data-tooltip="Jump to any step in the animation">Jump to Step:<span id="stepJumpLabel">0</span></label>
+  <input type="range" id="stepJump" min="0" max="0" step="1" value="0" aria-label="Jump to animation step control" disabled>
+</div>
+
+<div id="status" role="status" aria-live="polite">Ready to start</div>
+
+<div class="board" id="board" aria-label="Chessboard grid"></div>
+
+<div id="infoBox" aria-live="polite" aria-atomic="true" role="note" aria-live="polite">
+  Select a piece and a starting position. Use controls or keyboard: Space=Play/Pause, ←/→=Step Back/Forward, R=Reset.<br />
+  Bishop tours toggle colour automatically; Queen tour combines rook and bishop path sequentially.<br />
+  Knight uses backtracking + Warnsdorff heuristic visualization.
+</div>
+
+<script>
+  const boardSize = 8;
+  let board = [];
+  let steps = [];
+  let moveIndex = -1;
+  let animationInterval = null;
+  let animDelay = 400;
+  let isPaused = true;
+  let foundTour = false;
+  let visitedGrid = [];
+  let currentPiece = 'knight'; // knight, rook, bishop, queen
+  let bishopColor = 'light'; // used only for bishop for color toggling in tours
+
+  // Knight moves
+  const knightMoves = [
+    [2, 1], [1, 2], [-1, 2], [-2, 1],
+    [-2, -1], [-1, -2], [1, -2], [2, -1]
+  ];
+
+  const boardEl = document.getElementById('board');
+  const startPosSelect = document.getElementById('startPos');
+  const startBtn = document.getElementById('startBtn');
+  const pauseBtn = document.getElementById('pauseBtn');
+  const stepBackBtn = document.getElementById('stepBackBtn');
+  const stepForwardBtn = document.getElementById('stepForwardBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const statusEl = document.getElementById('status');
+  const speedRange = document.getElementById('speedRange');
+  const speedLabel = document.getElementById('speedLabel');
+  const stepJump = document.getElementById('stepJump');
+  const stepJumpLabel = document.getElementById('stepJumpLabel');
+  const pieceSelect = document.getElementById('pieceSelect');
+
+  // Utilities
+  function positionToString(r,c) {
+    return `${String.fromCharCode(97 + c)}${boardSize - r}`;
+  }
+
+  // Create board UI grid
+  function createBoard() {
+    boardEl.innerHTML = '';
+    board = [];
+    for(let r=0; r<boardSize; r++) {
+      board[r] = [];
+      for(let c=0; c<boardSize; c++) {
+        const sq = document.createElement('div');
+        sq.classList.add('square');
+        ((r + c) % 2 === 0 ? sq.classList.add('light') : sq.classList.add('dark'));
+        sq.dataset.row = r;
+        sq.dataset.col = c;
+        sq.setAttribute('tabindex','0');
+        sq.setAttribute('aria-label', positionToString(r,c) + ' square');
+        sq.addEventListener('click', () => {
+          if(sq.classList.contains('current')) {
+            setStartPosition(r, c, true);
+          }
+        });
+        boardEl.appendChild(sq);
+        board[r][c] = sq;
+      }
+    }
+  }
+
+  // Populate start position dropdown
+  function fillStartPositionOptions() {
+    startPosSelect.innerHTML = '';
+    for(let r=0; r<boardSize; r++) {
+      for(let c=0; c<boardSize; c++) {
+        const option = document.createElement('option');
+        option.value = `${r},${c}`;
+        option.textContent = positionToString(r,c);
+        startPosSelect.appendChild(option);
+      }
+    }
+  }
+
+  // Clear board cells styling
+  function clearBoard() {
+    for(let r=0; r<boardSize; r++) {
+      for(let c=0; c<boardSize; c++) {
+        const cell = board[r][c];
+        cell.classList.remove('visited', 'current', 'highlight-backtrack');
+        cell.textContent = '';
+        const mn = cell.querySelector('.move-number');
+        if(mn) mn.remove();
+      }
+    }
+  }
+  function setMoveNumber(cell, num) {
+    let existing = cell.querySelector('.move-number');
+    if(existing) existing.remove();
+    const span = document.createElement('span');
+    span.classList.add('move-number');
+    span.textContent = num;
+    cell.appendChild(span);
+  }
+
+  // --- KNIGHT TOUR ALGO (Backtracking + Warnsdorff) ---
+  function initVisitedGrid() {
+    visitedGrid = Array(boardSize).fill(null).map(() => Array(boardSize).fill(false));
+  }
+  function isSafe(x, y) {
+    return x>=0 && y>=0 && x<boardSize && y<boardSize && !visitedGrid[x][y];
+  }
+  function getNextMovesOrdered(x, y) {
+    const possibleMoves = [];
+    for(const [dx, dy] of knightMoves) {
+      let nx = x+dx, ny = y+dy;
+      if(isSafe(nx, ny)) {
+        let onwardCount = 0;
+        for(const [ddx, ddy] of knightMoves){
+          let nnx = nx+ddx, nny = ny+ddy;
+          if(isSafe(nnx, nny)) onwardCount++;
+        }
+        possibleMoves.push({pos:[nx, ny], onward:onwardCount});
+      }
+    }
+    possibleMoves.sort((a,b) => a.onward-b.onward);
+    return possibleMoves.map(m=>m.pos);
+  }
+  function knightTourBacktrack(x, y, moveCount) {
+    visitedGrid[x][y] = true;
+    steps.push({row:x, col:y, moveNumber:moveCount, backtracking:false});
+    if(moveCount === boardSize*boardSize) {
+      foundTour = true;
+      return true;
+    }
+    const nextMoves = getNextMovesOrdered(x, y);
+    for(const [nx, ny] of nextMoves) {
+      if(foundTour) return true;
+      if(knightTourBacktrack(nx, ny, moveCount+1)) return true;
+    }
+    // backtrack step
+    steps.push({row:x, col:y, moveNumber:moveCount, backtracking:true});
+    visitedGrid[x][y] = false;
+    return false;
+  }
+
+  // --- ROOK TOUR ALGO (Simple serpentine row traversal) ---
+  function getRookTour(startRow, startCol) {
+    // Visit all squares in row-major serpentine pattern starting from (startRow, startCol)
+    const path = [];
+    // Move right or left depending on row parity
+    for(let r=0; r<boardSize; r++) {
+      let actualRow = (startRow + r) % boardSize;
+      if(actualRow === startRow){
+        // in start row, start from startCol
+        const colsRight = [];
+        for(let c=startCol; c<boardSize; c++) colsRight.push(c);
+        const colsLeft = [];
+        for(let c=0; c<startCol; c++) colsLeft.push(c);
+        const colsSeq = ((actualRow % 2) === 0) ? (colsRight.concat(colsLeft)) : (colsRight.reverse().concat(colsLeft.reverse()));
+        for(const c of colsSeq) path.push([actualRow, c]);
+      } else {
+        // other rows full row left->right or right->left serpentine
+        const cols = [];
+        for(let c=0; c<boardSize; c++) cols.push(c);
+        const serpCols = ((actualRow % 2) === 0) ? cols : cols.reverse();
+        for(const c of serpCols) path.push([actualRow, c]);
+      }
+    }
+    return path;
+  }
+
+  // --- BISHOP TOUR ALGO (Two separate tours on light or dark squares) ---
+  // Bishop is restricted to color of starting square
+  function isSameColor(r1, c1, r2, c2) {
+    return ((r1 + c1) % 2) === ((r2 + c2) % 2);
+  }
+  function getBishopTour(startRow, startCol) {
+    const colorOfStart = ((startRow + startCol) % 2) === 0 ? 'light' : 'dark';
+    // Collect all squares of same color in serpentine order along diagonals
+    // We can do a simple pattern: visit diagonal stripes in order, left to right on one diagonal then reverse next
+    // For demonstration, we list all squares of start color in row-major order
+    let squares = [];
+    for(let r=0; r<boardSize; r++) {
+      for(let c=0; c<boardSize; c++) {
+        if(((r+c)%2 === (colorOfStart==='light'?0:1))) {
+          squares.push([r,c]);
+        }
+      }
+    }
+    // To start from the start cell, reorder squares so that start is first
+    let startIndex = squares.findIndex(([r,c]) => r===startRow && c===startCol);
+    if(startIndex==-1) startIndex=0;
+    const ordered = squares.slice(startIndex).concat(squares.slice(0, startIndex));
+    return ordered;
+  }
+
+  // --- QUEEN TOUR ALGO (Combine Rook + Bishop tours sequentially) ---
+  // Queen combines rook then bishop tours from start
+  // For demo, queen moves along rook path then bishop path
+  function getQueenTour(startRow, startCol) {
+    const rookPath = getRookTour(startRow, startCol);
+    const bishopPath = getBishopTour(startRow, startCol);
+    // Remove duplicates from bishopPath that appear in rookPath
+    const rookSet = new Set(rookPath.map(pos => pos.toString()));
+    const filteredBishopPath = bishopPath.filter(pos => !rookSet.has(pos.toString()));
+    return rookPath.concat(filteredBishopPath);
+  }
+
+  // Render animation and controls
+  function clearAll() {
+    clearBoard();
+    steps = [];
+    moveIndex = -1;
+    foundTour = false;
+    visitedGrid = [];
+    pauseAnimation();
+  }
+  function setMoveNumber(cell, num) {
+    let existing = cell.querySelector('.move-number');
+    if(existing) existing.remove();
+    const span = document.createElement('span');
+    span.classList.add('move-number');
+    span.textContent = num;
+    cell.appendChild(span);
+  }
+
+  function animateStep(i) {
+    clearBoard();
+    if(i < 0) {
+      statusEl.textContent = 'Ready to start';
+      stepJumpLabel.textContent = '0';
+      stepJump.max = steps.length > 0 ? steps.length - 1 : 0;
+      stepJump.value = 0;
+      updateControlButtons();
+      return;
+    }
+    if(i >= steps.length) i = steps.length - 1;
+    for(let j=0; j<=i; j++) {
+      const step = steps[j];
+      let cell = board[step[0]][step[1]];
+      cell.classList.add('visited');
+      setMoveNumber(cell, j+1);
+    }
+    const curr = steps[i];
+    board[curr[0]][curr[1]].classList.add('current');
+    moveIndex = i;
+    statusEl.textContent = `Step ${i+1} of ${steps.length} - Position: ${positionToString(curr[0], curr[1])}`;
+    stepJumpLabel.textContent = (i+1).toString();
+    stepJump.max = steps.length - 1;
+    stepJump.value = i;
+    updateControlButtons();
+  }
+
+  function updateControlButtons() {
+    startBtn.disabled = !isPaused && moveIndex < steps.length-1;
+    pauseBtn.disabled = isPaused;
+    resetBtn.disabled = moveIndex === -1;
+    stepBackBtn.disabled = moveIndex <= 0;
+    stepForwardBtn.disabled = moveIndex >= steps.length-1;
+    stepJump.disabled = steps.length === 0;
+  }
+
+  function startAnimation() {
+    if(steps.length === 0) return;
+    isPaused = false;
+    updateControlButtons();
+    if(moveIndex >= steps.length-1) animateStep(0);
+    animationInterval = setInterval(() => {
+      if(isPaused) return;
+      if(moveIndex >= steps.length-1) {
+        pauseAnimation();
+        return;
+      }
+      animateStep(moveIndex+1);
+    }, animDelay);
+  }
+  function pauseAnimation() {
+    isPaused = true;
+    if(animationInterval) {
+      clearInterval(animationInterval);
+      animationInterval = null;
+    }
+    updateControlButtons();
+  }
+  function resetAnimation() {
+    pauseAnimation();
+    animateStep(-1);
+  }
+  function stepForward() {
+    if(moveIndex < steps.length-1) {
+      animateStep(moveIndex+1);
+    }
+  }
+  function stepBack() {
+    if(moveIndex > 0) {
+      animateStep(moveIndex-1);
+    }
+  }
+
+  // Generate steps array based on selected piece and start
+  // For knight: run warning backtracking
+  // For rook, bishop, queen: generate paths directly
+  function generateSteps(piece, startRow, startCol) {
+    clearAll();
+    if(piece === 'knight') {
+      initVisitedGrid();
+      foundTour = false;
+      statusEl.textContent = 'Calculating Knight tour...please wait.';
+      setTimeout(() => {
+        knightTourBacktrack(startRow, startCol, 1);
+        if(foundTour) {
+          statusEl.textContent = `Knight Tour found! Steps: ${steps.length}`;
+          const path = steps.filter(s => !s.backtracking).map(s => [s.row, s.col]);
+          steps = path;
+          animateStep(-1);
+        } else {
+          statusEl.textContent = 'No Knight Tour found for this start position.';
+          steps = [];
+          animateStep(-1);
+        }
+      },10);
+    } else if(piece === 'rook') {
+      steps = getRookTour(startRow, startCol);
+      statusEl.textContent = `Rook Tour path length: ${steps.length}`;
+      animateStep(-1);
+    } else if(piece === 'bishop') {
+      steps = getBishopTour(startRow, startCol);
+      statusEl.textContent = `Bishop Tour path length: ${steps.length} on color ${( (startRow+startCol)%2===0 ? 'light':'dark')}`;
+      animateStep(-1);
+    } else if(piece === 'queen') {
+      steps = getQueenTour(startRow, startCol);
+      statusEl.textContent = `Queen Tour combined path length: ${steps.length}`;
+      animateStep(-1);
+    }
+  }
+
+  function setStartPosition(r, c, rerun=false) {
+    startPosSelect.value = `${r},${c}`;
+    if(rerun) {
+      generateSteps(currentPiece, r, c);
+    }
+  }
+  function keyboardHandler(e) {
+    if(['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName)) return;
+    switch(e.key) {
+      case ' ':
+        e.preventDefault();
+        if(isPaused) startBtn.click();
+        else pauseBtn.click();
+        break;
+      case 'ArrowRight':
+        e.preventDefault();
+        stepForwardBtn.click();
+        break;
+            case 'ArrowLeft':
+        e.preventDefault();
+        stepBackBtn.click();
+        break;
+      case 'r':
+      case 'R':
+        e.preventDefault();
+        resetBtn.click();
+        break;
+    }
+  }
+
+  // Event Listeners
+  startBtn.addEventListener('click', () => {
+    startAnimation();
+  });
+  pauseBtn.addEventListener('click', () => {
+    pauseAnimation();
+  });
+  resetBtn.addEventListener('click', () => {
+    resetAnimation();
+  });
+  stepBackBtn.addEventListener('click', () => {
+    stepBack();
+  });
+  stepForwardBtn.addEventListener('click', () => {
+    stepForward();
+  });
+
+  startPosSelect.addEventListener('change', () => {
+    const [r, c] = startPosSelect.value.split(',').map(Number);
+    generateSteps(currentPiece, r, c);
+  });
+
+  speedRange.addEventListener('input', () => {
+    animDelay = parseInt(speedRange.value);
+    speedLabel.textContent = animDelay + ' ms';
+    if(animationInterval) {
+      clearInterval(animationInterval);
+      animationInterval = setInterval(() => {
+        if(isPaused) return;
+        if(moveIndex >= steps.length-1) {
+          pauseAnimation();
+          return;
+        }
+        animateStep(moveIndex+1);
+      }, animDelay);
+    }
+  });
+
+  pieceSelect.addEventListener('change', () => {
+    currentPiece = pieceSelect.value;
+    const [r,c] = startPosSelect.value.split(',').map(Number);
+    generateSteps(currentPiece, r, c);
+  });
+
+  stepJump.addEventListener('input', () => {
+    let val = parseInt(stepJump.value);
+    if(!isNaN(val)) {
+      animateStep(val);
+      pauseAnimation();
+    }
+  });
+
+  window.addEventListener('keydown', keyboardHandler);
+
+  // Initialization
+  createBoard();
+  fillStartPositionOptions();
+  setStartPosition(0, 0, true);
+</script>
+</body>
+</html>
