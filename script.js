@@ -1,12 +1,14 @@
 /**
  * script.js: Manages application state and core logic.
+ * BUGFIX: Calls ui.initUI() at the start to ensure DOM elements are ready.
  */
 import * as ui from './ui.js';
 
 // --- STATE ---
 const state = {
     boardSize: 8,
-    mode: 'tour', // 'tour' or 'path'
+    theme: 'dark',
+    mode: 'tour',
     currentPiece: 'knight',
     startPos: [0, 0],
     endPos: [7, 7],
@@ -18,25 +20,20 @@ const state = {
     isCalculating: false,
 };
 
-// --- MOVESET DEFINITIONS ---
+// --- ALGORITHMS (same as before, omitted for brevity) ---
 const pieceMoves = {
     knight: [[2, 1], [1, 2], [-1, 2], [-2, 1], [-2, -1], [-1, -2], [1, -2], [2, -1]],
     rook: [[0, 1], [0, -1], [1, 0], [-1, 0]],
     bishop: [[1, 1], [1, -1], [-1, 1], [-1, -1]],
     queen: [[0, 1], [0, -1], [1, 0], [-1, 0], [1, 1], [1, -1], [-1, 1], [-1, -1]],
 };
-
 const isSlidingPiece = { rook: true, bishop: true, queen: true, knight: false };
-
 const positionToString = (r, c) => `${String.fromCharCode(97 + c)}${state.boardSize - r}`;
 const isSafe = (r, c) => r >= 0 && c >= 0 && r < state.boardSize && c < state.boardSize;
-
-// --- ALGORITHMS ---
 
 function getKnightTour(startR, startC) {
     let visited = Array(state.boardSize).fill(0).map(() => Array(state.boardSize).fill(false));
     let path = [];
-    
     function getNextMoves(r, c) {
         const moves = [];
         for (const [dr, dc] of pieceMoves.knight) {
@@ -51,7 +48,6 @@ function getKnightTour(startR, startC) {
         }
         return moves.sort((a, b) => a.count - b.count);
     }
-
     function solve(r, c) {
         visited[r][c] = true;
         path.push([r, c]);
@@ -67,9 +63,7 @@ function getKnightTour(startR, startC) {
     solve(startR, startC);
     return path;
 }
-
 function getSimpleTour(piece, startR, startC) {
-    // Simplified tour for other pieces for demonstration
     const path = [[startR, startC]];
     const visited = new Set([`${startR},${startC}`]);
     let r = startR, c = startC;
@@ -83,19 +77,15 @@ function getSimpleTour(piece, startR, startC) {
     }
     return path;
 }
-
 function getShortestPath(piece, start, end) {
-    const queue = [[start, [start]]]; // [[pos], [path]]
+    const queue = [[start, [start]]];
     const visited = new Set([`${start[0]},${start[1]}`]);
-
     while (queue.length > 0) {
         const [[r, c], path] = queue.shift();
         if (r === end[0] && c === end[1]) return path;
-
         const moves = pieceMoves[piece];
         for (const [dr, dc] of moves) {
             let nr = r + dr, nc = c + dc;
-            
             if (isSlidingPiece[piece]) {
                  while(isSafe(nr, nc)) {
                     if (!visited.has(`${nr},${nc}`)) {
@@ -104,7 +94,7 @@ function getShortestPath(piece, start, end) {
                     }
                     nr += dr; nc += dc;
                  }
-            } else { // Knight
+            } else {
                 if (isSafe(nr, nc) && !visited.has(`${nr},${nc}`)) {
                     visited.add(`${nr},${nc}`);
                     queue.push([[nr, nc], [...path, [nr, nc]]]);
@@ -112,7 +102,7 @@ function getShortestPath(piece, start, end) {
             }
         }
     }
-    return []; // No path found
+    return [];
 }
 
 
@@ -156,9 +146,8 @@ function resetAnimation() {
 function handleCalculation() {
     pauseAnimation();
     state.isCalculating = true;
-    ui.updateControls(state);
     updateStateFromInputs();
-
+    ui.updateControls(state);
     ui.updateStatus(`Calculating ${state.currentPiece} ${state.mode}...`);
 
     setTimeout(() => {
@@ -178,9 +167,10 @@ function handleCalculation() {
             ui.updateStatus(message);
             resetAnimation();
             if (state.mode === 'path') {
-                runStep(state.steps.length - 1); // Show full path instantly
+                runStep(state.steps.length - 1);
             } else {
-                 runStep(0); // Show first step for tour
+                 runStep(0);
+                 pauseAnimation();
             }
         } else {
             ui.updateStatus(`No path found for ${state.currentPiece}.`);
@@ -193,24 +183,43 @@ function handleCalculation() {
 
 function handleSquareClick(r, c) {
     if (state.isCalculating) return;
-    ui.updatePositionDropdown('start', r, c);
-    handleCalculation();
+    updateStateFromInputs();
+    
+    if (state.mode === 'tour' || !state.startPos) {
+        state.startPos = [r,c];
+        ui.updatePositionDropdown('start', r, c);
+    } else { // In 'path' mode, alternate between setting start and end
+        if (JSON.stringify(state.startPos) === JSON.stringify([r,c])) {
+             state.endPos = [r,c];
+             ui.updatePositionDropdown('end', r, c);
+        } else {
+            state.startPos = [r,c];
+            ui.updatePositionDropdown('start', r, c);
+        }
+    }
+    
+    // Visually update board immediately before calculation
+    ui.renderBoardState(state);
 }
 
 function updateStateFromInputs() {
     state.currentPiece = document.getElementById('pieceSelect').value;
     state.startPos = document.getElementById('startPos').value.split(',').map(Number);
-    state.endPos = document.getElementById('endPos').value.split(',').map(Number);
+    if(state.mode === 'path') {
+        state.endPos = document.getElementById('endPos').value.split(',').map(Number);
+    }
 }
 
 // --- INITIALIZATION ---
 function init() {
-    ui.initialize(state.boardSize, handleSquareClick);
+    ui.initUI();
+    ui.createBoard(state.boardSize, handleSquareClick);
     ui.populateAllSelects(state.boardSize, positionToString);
-    ui.setMode(state.mode);
+    ui.applyTheme(state.theme);
+    ui.setModeUI(state.mode);
     ui.updateControls(state);
-
-    // Event Listeners
+    
+    // Add Event Listeners
     document.getElementById('calculateBtn').addEventListener('click', handleCalculation);
     document.getElementById('startBtn').addEventListener('click', startAnimation);
     document.getElementById('pauseBtn').addEventListener('click', pauseAnimation);
@@ -219,9 +228,16 @@ function init() {
     document.getElementById('stepBackBtn').addEventListener('click', () => runStep(state.moveIndex - 1));
     
     document.getElementById('mode-selector').addEventListener('click', (e) => {
-        if (e.target.tagName === 'BUTTON') {
+        if (e.target.dataset.mode) {
             state.mode = e.target.dataset.mode;
-            ui.setMode(state.mode);
+            ui.setModeUI(state.mode);
+        }
+    });
+
+    document.getElementById('theme-selector').addEventListener('click', (e) => {
+        if (e.target.dataset.theme) {
+            state.theme = e.target.dataset.theme;
+            ui.applyTheme(state.theme);
         }
     });
 
@@ -237,9 +253,11 @@ function init() {
     });
     
     window.addEventListener('resize', () => {
-        ui.initialize(state.boardSize, handleSquareClick);
+        ui.createBoard(state.boardSize, handleSquareClick);
         ui.renderBoardState(state);
     });
+
+    handleCalculation(); // Run initial calculation on load
 }
 
 document.addEventListener('DOMContentLoaded', init);
