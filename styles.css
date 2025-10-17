@@ -9,23 +9,40 @@ body {
     box-shadow: 0 0 5px #06b6d4, 0 0 10px #06b6d4, 0 0 15px #06b6d4;
 }
 
+.square {
+    transition: background-color 0.3s ease;
+}
+
 /* Styles for the state of each square on the board */
-.square.current {
+.square.current-path {
     background-color: #facc15 !important; /* yellow-400 */
-    color: #1f2937 !important; /* gray-800 */
-    transform: scale(1.08);
-    box-shadow: 0 0 12px 5px #facc15cc;
-    z-index: 10;
 }
 
 .square.visited {
     background-color: #22c55e; /* green-500 */
-    color: #1f2937; /* gray-800 */
-    opacity: 0.8;
+    opacity: 0.6;
 }
 
-.square.highlight-backtrack {
-    background-color: rgba(239, 68, 68, 0.4) !important; /* red-500 with opacity */
+.square.start-point-suggestion {
+    cursor: pointer;
+    background-color: rgba(103, 232, 249, 0.3) !important; /* cyan-300 with opacity */
+}
+
+
+/* Styling for the animated piece */
+#animated-piece svg {
+    width: 80%;
+    height: 80%;
+    margin: 10%;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+
+/* Styling for the SVG path lines */
+#path-svg line {
+    stroke: #f59e0b; /* amber-500 */
+    stroke-width: 3;
+    stroke-linecap: round;
+    opacity: 0.8;
 }
 
 /* Custom styling for the range input sliders */
