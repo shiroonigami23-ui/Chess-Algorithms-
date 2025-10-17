@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Interactive Chess Tours & Pathfinding</title>
+    <title>Interactive Chess Pathfinding</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -16,26 +16,36 @@
     <!-- Custom Stylesheet -->
     <link rel="stylesheet" href="styles.css">
 </head>
-<body class="bg-gray-900 text-gray-100 flex flex-col items-center min-h-screen p-4 antialiased">
+<body data-theme="dark">
 
-    <div class="w-full max-w-5xl mx-auto flex flex-col items-center">
+    <div class="w-full max-w-5xl mx-auto flex flex-col items-center min-h-screen p-4">
         <!-- Header Section -->
         <header class="text-center mb-4">
-            <h1 class="text-3xl sm:text-4xl font-bold text-cyan-400 tracking-tight">Interactive Chess Pathfinding</h1>
-            <p class="text-cyan-200 text-sm sm:text-base">Full Tour & Shortest Path Visualization</p>
+            <h1 class="text-3xl sm:text-4xl font-bold text-accent tracking-tight">Interactive Chess Pathfinding</h1>
+            <p class="text-text-secondary text-sm sm:text-base">Full Tour & Shortest Path Visualization</p>
         </header>
 
         <!-- Main Content -->
         <main class="w-full flex flex-col lg:flex-row items-center lg:items-start gap-8">
             
             <!-- Controls Panel -->
-            <div id="controls-panel" class="w-full lg:w-1/3 bg-gray-800 p-4 rounded-xl border border-cyan-700/50 flex flex-col gap-4">
+            <div id="controls-panel" class="w-full lg:w-1/3 bg-bg-secondary p-4 rounded-xl border border-border flex flex-col gap-4">
                 
+                 <!-- Theme Selector -->
+                <div>
+                    <label class="block text-sm font-medium text-text-primary mb-2">Theme</label>
+                    <div id="theme-selector" class="grid grid-cols-3 gap-2 bg-bg-tertiary p-1 rounded-lg">
+                        <button data-theme="dark" class="theme-btn">Dark</button>
+                        <button data-theme="light" class="theme-btn">Light</button>
+                        <button data-theme="wood" class="theme-btn">Wood</button>
+                    </div>
+                </div>
+
                 <!-- Mode Selector -->
                 <div>
-                    <label class="block text-sm font-medium text-cyan-300 mb-2">Mode</label>
-                    <div id="mode-selector" class="grid grid-cols-2 gap-2 bg-gray-900/50 p-1 rounded-lg">
-                        <button data-mode="tour" class="mode-btn active-mode">Full Tour</button>
+                    <label class="block text-sm font-medium text-text-primary mb-2">Mode</label>
+                    <div id="mode-selector" class="grid grid-cols-2 gap-2 bg-bg-tertiary p-1 rounded-lg">
+                        <button data-mode="tour" class="mode-btn">Full Tour</button>
                         <button data-mode="path" class="mode-btn">Shortest Path</button>
                     </div>
                 </div>
@@ -43,49 +53,48 @@
                 <!-- Piece and Position Controls -->
                 <div class="space-y-4">
                     <div>
-                        <label for="pieceSelect" class="block text-sm font-medium text-cyan-300 mb-1">Piece</label>
-                        <select id="pieceSelect" class="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none"></select>
+                        <label for="pieceSelect" class="block text-sm font-medium text-text-primary mb-1">Piece</label>
+                        <select id="pieceSelect" class="control-input"></select>
                     </div>
                     <div>
-                        <label for="startPos" class="block text-sm font-medium text-cyan-300 mb-1">Start Position (or click board)</label>
-                        <select id="startPos" class="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none"></select>
+                        <label for="startPos" class="block text-sm font-medium text-text-primary mb-1">Start Position (or click board)</label>
+                        <select id="startPos" class="control-input"></select>
                     </div>
                     <div id="end-pos-container" class="hidden">
-                        <label for="endPos" class="block text-sm font-medium text-cyan-300 mb-1">End Position</label>
-                        <select id="endPos" class="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none"></select>
+                        <label for="endPos" class="block text-sm font-medium text-text-primary mb-1">End Position</label>
+                        <select id="endPos" class="control-input"></select>
                     </div>
                 </div>
                 
-                <!-- Calculation Button -->
-                <button id="calculateBtn" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2 px-4 rounded-md transition-colors text-lg">Calculate Tour</button>
+                <button id="calculateBtn" class="w-full bg-accent hover:bg-accent-hover text-white font-bold py-2 px-4 rounded-md transition-colors text-lg">Calculate</button>
 
                 <!-- Animation Controls -->
                 <div id="animation-controls" class="space-y-4">
                     <div class="grid grid-cols-3 gap-2">
-                        <button id="startBtn" data-tooltip="Start / Resume (Space)" class="control-btn bg-green-600 hover:bg-green-500">Start</button>
-                        <button id="pauseBtn" data-tooltip="Pause (Space)" class="control-btn bg-yellow-500 hover:bg-yellow-400 text-gray-900">Pause</button>
-                        <button id="resetBtn" data-tooltip="Reset (R)" class="control-btn bg-red-600 hover:bg-red-500">Reset</button>
+                        <button id="startBtn" class="control-btn bg-green-600 hover:bg-green-500">Start</button>
+                        <button id="pauseBtn" class="control-btn bg-yellow-500 hover:bg-yellow-400 text-gray-900">Pause</button>
+                        <button id="resetBtn" class="control-btn bg-red-600 hover:bg-red-500">Reset</button>
                     </div>
                     <div class="grid grid-cols-2 gap-2">
-                        <button id="stepBackBtn" data-tooltip="Step Back (←)" class="control-btn bg-gray-600 hover:bg-gray-500">Back</button>
-                        <button id="stepForwardBtn" data-tooltip="Step Forward (→)" class="control-btn bg-gray-600 hover:bg-gray-500">Next</button>
+                        <button id="stepBackBtn" class="control-btn bg-gray-600 hover:bg-gray-500">Back</button>
+                        <button id="stepForwardBtn" class="control-btn bg-gray-600 hover:bg-gray-500">Next</button>
                     </div>
                     <div>
-                        <div class="flex justify-between items-center text-sm font-medium text-cyan-300 mb-1"><label for="speedRange">Speed</label><span id="speedLabel">300 ms</span></div>
+                        <div class="flex justify-between items-center text-sm font-medium text-text-primary mb-1"><label for="speedRange">Speed</label><span id="speedLabel">300 ms</span></div>
                         <input type="range" id="speedRange" min="50" max="1000" step="25" value="300">
                     </div>
                     <div>
-                        <div class="flex justify-between items-center text-sm font-medium text-cyan-300 mb-1"><label for="stepJump">Jump to Step</label><span id="stepJumpLabel">0</span></div>
+                        <div class="flex justify-between items-center text-sm font-medium text-text-primary mb-1"><label for="stepJump">Jump to Step</label><span id="stepJumpLabel">0</span></div>
                         <input type="range" id="stepJump" min="0" max="0" step="1" value="0">
                     </div>
                 </div>
-                <div id="status" role="status" class="text-center text-cyan-200 bg-gray-700/50 rounded-md p-2 min-h-[40px] text-sm">Select options and calculate.</div>
+                <div id="status" role="status" class="text-center text-text-secondary bg-bg-tertiary rounded-md p-2 min-h-[40px] text-sm">Select options and calculate.</div>
             </div>
 
             <!-- Chessboard and overlays -->
             <div class="w-full lg:w-2/3 flex-shrink-0">
                 <div id="board-container" class="relative w-full aspect-square">
-                    <div id="board" class="grid grid-cols-8 border-2 border-cyan-500 rounded-lg overflow-hidden w-full h-full neon-glow"></div>
+                    <div id="board" class="grid grid-cols-8 rounded-lg overflow-hidden w-full h-full"></div>
                     <svg id="path-svg" class="absolute top-0 left-0 w-full h-full pointer-events-none"></svg>
                     <div id="animated-piece" class="absolute top-0 left-0 pointer-events-none transition-transform duration-300 ease-in-out"></div>
                 </div>
