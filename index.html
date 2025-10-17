@@ -3,102 +3,151 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Chess Pathfinding</title>
+    <title>Interactive Chess Pathfinding</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* --- THEME DEFINITIONS --- */
+        :root { --font-sans: 'Inter', sans-serif; }
+        body[data-theme="dark"] {
+            --bg-primary: #111827; --bg-secondary: #1f2937; --bg-tertiary: #374151;
+            --text-primary: #f3f4f6; --text-secondary: #9ca3af; --border: #4b5563;
+            --accent: #06b6d4; --accent-hover: #0891b2; --square-light: #e0f2fe;
+            --square-dark: #075985; --piece-light: #ffffff; --piece-dark: #e0f2fe;
+            --board-shadow: 0 0 8px var(--accent), 0 0 16px var(--accent);
+        }
+        body[data-theme="light"] {
+            --bg-primary: #f3f4f6; --bg-secondary: #ffffff; --bg-tertiary: #e5e7eb;
+            --text-primary: #1f2937; --text-secondary: #4b5563; --border: #d1d5db;
+            --accent: #0d9488; --accent-hover: #0f766e; --square-light: #f9fafb;
+            --square-dark: #d1d5db; --piece-light: #4b5563; --piece-dark: #1f2937;
+            --board-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        body[data-theme="wood"] {
+            --bg-primary: #4a3728; --bg-secondary: #6f513c; --bg-tertiary: #5c4531;
+            --text-primary: #f2e5d7; --text-secondary: #d4c2af; --border: #8e6e53;
+            --accent: #c88a53; --accent-hover: #b07845; --square-light: #ebd8c1;
+            --square-dark: #a1662f; --piece-light: #ffffff; --piece-dark: #f2e5d7;
+            --board-shadow: 0 6px 15px rgba(0,0,0,0.4), inset 0 0 10px rgba(0,0,0,0.3);
+        }
+        /* --- BASE STYLES --- */
+        body { background-color: var(--bg-primary); color: var(--text-primary); font-family: var(--font-sans); transition: background-color 0.3s, color 0.3s; -webkit-tap-highlight-color: transparent; }
+        /* --- BOARD & PIECES --- */
+        .board { grid-template-columns: repeat(var(--board-size, 8), 1fr); border: 2px solid var(--border); box-shadow: var(--board-shadow); transition: all 0.3s; }
+        .square { transition: background-color 0.3s ease, box-shadow 0.3s ease; position: relative; }
+        .square.light { background-color: var(--square-light); }
+        .square.dark { background-color: var(--square-dark); }
+        .animated-piece { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .animated-piece svg { filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4)); }
+        /* --- BOARD STATES & PATHS --- */
+        .square.current-path { background-color: #facc15 !important; }
+        .square.visited { background-color: rgba(34, 197, 94, 0.6) !important; }
+        .square.start-point::before { content: 'S'; position: absolute; top: 2px; left: 4px; font-weight: bold; color: rgba(0,0,0,0.6); }
+        .square.end-point::before { content: 'E'; position: absolute; top: 2px; left: 4px; font-weight: bold; color: rgba(0,0,0,0.6); }
+        .square.selectable:hover { outline: 3px solid var(--accent); z-index: 10; cursor: pointer; }
+        .path-svg line { stroke-width: 4; stroke-linecap: round; opacity: 0.9; transform-origin: center; animation: draw-line 0.4s ease-out forwards; }
+        .tour-path line { stroke: #f59e0b; }
+        .path-path line { stroke: #ec4899; }
+        @keyframes draw-line { from { stroke-dasharray: 1000; stroke-dashoffset: 1000; } to { stroke-dashoffset: 0; } }
+        .heuristic-hint { position: absolute; top:0; left:0; width: 100%; height: 100%; display:flex; justify-content: center; align-items: center; font-weight: bold; font-size: 1.2rem; color: white; text-shadow: 1px 1px 2px black; z-index: 20; }
+        /* --- SLIDER STYLES --- */
+        .slider { -webkit-appearance: none; appearance: none; background-color: var(--bg-tertiary); width: 100%; height: 0.5rem; border-radius: 9999px; cursor: pointer; }
+        .slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; background-color: var(--accent); border: 2px solid var(--bg-secondary); height: 1.25rem; width: 1.25rem; border-radius: 9999px; margin-top: -6px; }
+        .slider::-moz-range-thumb { background-color: var(--accent); border: 2px solid var(--bg-secondary); height: 1.25rem; width: 1.25rem; border-radius: 9999px; }
+    </style>
 </head>
 <body data-theme="dark">
-
-    <div class="app-container">
-        <!-- Header Section -->
+    <div class="w-full max-w-6xl mx-auto flex flex-col items-center min-h-screen p-4">
         <header class="text-center mb-4">
-            <h1 class="app-title">Chess Pathfinding</h1>
-            <p class="app-subtitle">Full Tour & Shortest Path Visualization</p>
+            <h1 class="text-3xl sm:text-4xl font-bold tracking-tight" style="color: var(--accent);">Interactive Chess Pathfinding</h1>
+            <p class="text-sm sm:text-base" style="color: var(--text-secondary);">Full Tour & Shortest Path Visualization</p>
         </header>
 
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Controls Panel -->
-            <div id="controls-panel" class="controls-panel">
-                
-                <div class="control-group">
-                    <label class="control-label">Theme</label>
-                    <div id="theme-selector" class="segmented-control">
-                        <button data-theme="dark" class="theme-btn">Dark</button>
-                        <button data-theme="light" class="theme-btn">Light</button>
-                        <button data-theme="wood" class="theme-btn">Wood</button>
+        <main class="w-full flex flex-col lg:flex-row items-center lg:items-start gap-8 mt-4">
+            <div class="w-full lg:w-1/3 p-4 rounded-xl flex flex-col gap-4" style="background-color: var(--bg-secondary); border: 1px solid var(--border);">
+                <!-- THEME, MODE, SIZE -->
+                <div class="flex flex-col gap-4">
+                    <div>
+                        <label class="block text-sm font-medium" style="color: var(--text-primary);">Theme</label>
+                        <div id="theme-selector" class="grid grid-cols-3 gap-1 p-1 rounded-lg" style="background-color: var(--bg-tertiary);">
+                            <button data-theme="dark" class="p-2 rounded-md transition-all duration-200 font-semibold text-sm" style="color: var(--text-secondary);">Dark</button>
+                            <button data-theme="light" class="p-2 rounded-md transition-all duration-200 font-semibold text-sm" style="color: var(--text-secondary);">Light</button>
+                            <button data-theme="wood" class="p-2 rounded-md transition-all duration-200 font-semibold text-sm" style="color: var(--text-secondary);">Wood</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium" style="color: var(--text-primary);">Mode</label>
+                        <div id="mode-selector" class="grid grid-cols-2 gap-1 p-1 rounded-lg" style="background-color: var(--bg-tertiary);">
+                            <button data-mode="tour" class="p-2 rounded-md transition-all duration-200 font-semibold text-sm" style="color: var(--text-secondary);">Full Tour</button>
+                            <button data-mode="path" class="p-2 rounded-md transition-all duration-200 font-semibold text-sm" style="color: var(--text-secondary);">Shortest Path</button>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center"><label for="boardSize" class="block text-sm font-medium" style="color: var(--text-primary);">Board Size</label><span id="boardSizeLabel" class="text-sm font-medium" style="color: var(--text-secondary);">8x8</span></div>
+                        <input type="range" id="boardSize" class="slider" min="4" max="12" step="1" value="8">
                     </div>
                 </div>
 
-                <div class="control-group">
-                    <label class="control-label">Mode</label>
-                    <div id="mode-selector" class="segmented-control">
-                        <button data-mode="tour" class="mode-btn">Full Tour</button>
-                        <button data-mode="path" class="mode-btn">Shortest Path</button>
-                    </div>
-                </div>
-                
-                <div class="control-group">
-                    <div class="flex justify-between items-center">
-                        <label for="boardSize" class="control-label">Board Size</label>
-                        <span id="boardSizeLabel" class="text-sm font-medium text-text-secondary">8x8</span>
-                    </div>
-                    <input type="range" id="boardSize" class="slider" min="4" max="12" step="1" value="8">
-                </div>
-
-                <div class="control-group space-y-3">
+                <!-- PIECE, POSITIONS, HEURISTIC -->
+                <div class="space-y-3">
                     <div>
-                        <label for="pieceSelect" class="control-label mb-1">Piece</label>
-                        <select id="pieceSelect" class="control-input"></select>
+                        <label for="pieceSelect" class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Piece</label>
+                        <select id="pieceSelect" class="w-full rounded-md py-2 px-3 transition-colors duration-300" style="background-color: var(--bg-tertiary); border: 1px solid var(--border); color: var(--text-primary);"></select>
                     </div>
                     <div>
-                        <label for="startPos" class="control-label mb-1">Start (or click board)</label>
-                        <select id="startPos" class="control-input"></select>
+                        <label for="startPos" class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Start (or click board)</label>
+                        <select id="startPos" class="w-full rounded-md py-2 px-3 transition-colors duration-300" style="background-color: var(--bg-tertiary); border: 1px solid var(--border); color: var(--text-primary);"></select>
                     </div>
                     <div id="end-pos-container" class="hidden">
-                        <label for="endPos" class="control-label mb-1">End Position</label>
-                        <select id="endPos" class="control-input"></select>
+                        <label for="endPos" class="block text-sm font-medium mb-1" style="color: var(--text-primary);">End Position</label>
+                        <select id="endPos" class="w-full rounded-md py-2 px-3 transition-colors duration-300" style="background-color: var(--bg-tertiary); border: 1px solid var(--border); color: var(--text-primary);"></select>
+                    </div>
+                     <div id="heuristic-container" class="hidden items-center">
+                        <label for="heuristic-toggle" class="text-sm font-medium" style="color: var(--text-primary);">Show Heuristic</label>
+                        <input type="checkbox" id="heuristic-toggle" class="ml-auto h-4 w-8 rounded-full appearance-none bg-gray-600 checked:bg-cyan-500 transition-colors cursor-pointer relative"><span class="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 h-5 w-5 rounded-full bg-white shadow-md transform transition-transform"></span>
                     </div>
                 </div>
                 
-                <button id="calculateBtn" class="calculate-btn">Calculate</button>
+                <button id="calculateBtn" class="w-full font-bold py-2.5 px-4 rounded-md transition-colors duration-300 text-lg text-white" style="background-color: var(--accent);">Calculate</button>
 
-                <div id="animation-controls" class="control-group space-y-4">
-                    <div class="grid grid-cols-3 gap-2">
-                        <button id="startBtn" class="control-btn bg-green-600 hover:bg-green-500">Start</button>
-                        <button id="pauseBtn" class="control-btn bg-yellow-500 hover:bg-yellow-400 text-gray-900">Pause</button>
-                        <button id="resetBtn" class="control-btn bg-red-600 hover:bg-red-500">Reset</button>
+                <!-- ANIMATION CONTROLS -->
+                <div id="animation-controls" class="space-y-4">
+                     <div class="grid grid-cols-3 gap-2">
+                        <button id="startBtn" class="font-bold py-2 px-4 rounded-md transition-all duration-200 text-white disabled:bg-gray-500 disabled:cursor-not-allowed disabled:opacity-70 bg-green-600 hover:bg-green-500">Start</button>
+                        <button id="pauseBtn" class="font-bold py-2 px-4 rounded-md transition-all duration-200 text-gray-900 disabled:bg-gray-500 disabled:cursor-not-allowed disabled:opacity-70 bg-yellow-500 hover:bg-yellow-400">Pause</button>
+                        <button id="resetBtn" class="font-bold py-2 px-4 rounded-md transition-all duration-200 text-white disabled:bg-gray-500 disabled:cursor-not-allowed disabled:opacity-70 bg-red-600 hover:bg-red-500">Reset</button>
                     </div>
                      <div class="grid grid-cols-2 gap-2">
-                        <button id="stepBackBtn" class="control-btn bg-gray-600 hover:bg-gray-500">Back</button>
-                        <button id="stepForwardBtn" class="control-btn bg-gray-600 hover:bg-gray-500">Next</button>
+                        <button id="stepBackBtn" class="font-bold py-2 px-4 rounded-md transition-all duration-200 text-white disabled:bg-gray-500 disabled:cursor-not-allowed disabled:opacity-70 bg-gray-600 hover:bg-gray-500">Back</button>
+                        <button id="stepForwardBtn" class="font-bold py-2 px-4 rounded-md transition-all duration-200 text-white disabled:bg-gray-500 disabled:cursor-not-allowed disabled:opacity-70 bg-gray-600 hover:bg-gray-500">Next</button>
                     </div>
                     <div>
-                        <div class="flex justify-between items-center text-sm font-medium text-text-primary mb-1"><label for="speedRange">Speed</label><span id="speedLabel">300 ms</span></div>
+                        <div class="flex justify-between items-center text-sm font-medium mb-1" style="color: var(--text-primary);"><label for="speedRange">Speed</label><span id="speedLabel">300 ms</span></div>
                         <input type="range" id="speedRange" class="slider" min="50" max="1000" step="25" value="300">
                     </div>
                     <div>
-                        <div class="flex justify-between items-center text-sm font-medium text-text-primary mb-1"><label for="stepJump">Jump to Step</label><span id="stepJumpLabel">0</span></div>
+                        <div class="flex justify-between items-center text-sm font-medium mb-1" style="color: var(--text-primary);"><label for="stepJump">Jump to Step</label><span id="stepJumpLabel">0</span></div>
                         <input type="range" id="stepJump" class="slider" min="0" max="0" step="1" value="0">
                     </div>
                 </div>
-                <div id="status" class="status-box">Select options and calculate.</div>
+
+                <!-- STATUS & INFO -->
+                <div id="status" class="text-center rounded-md p-2 min-h-[40px] text-sm" style="background-color: var(--bg-tertiary); color: var(--text-secondary);">Select options and calculate.</div>
+                <div id="info-panel" class="hidden p-3 rounded-lg text-sm" style="background-color: var(--bg-tertiary); color: var(--text-secondary);"></div>
             </div>
 
-            <!-- Chessboard -->
-            <div class="board-area">
-                <div id="board-container" class="board-container">
-                    <div id="board" class="board"></div>
-                    <svg id="path-svg" class="path-svg"></svg>
-                    <div id="animated-piece" class="animated-piece"></div>
+            <!-- CHESSBOARD -->
+            <div class="w-full lg:w-2/3 flex-shrink-0">
+                <div class="relative w-full max-w-[80vh] mx-auto aspect-square">
+                    <div id="board" class="board grid rounded-lg overflow-hidden w-full h-full"></div>
+                    <svg id="path-svg" class="path-svg absolute top-0 left-0 w-full h-full pointer-events-none"></svg>
+                    <div id="animated-piece" class="animated-piece absolute top-0 left-0 pointer-events-none"></div>
                 </div>
             </div>
         </main>
     </div>
-
-    <script src="https://cdn.tailwindcss.com"></script>
     <script type="module" src="script.js"></script>
 </body>
 </html>
