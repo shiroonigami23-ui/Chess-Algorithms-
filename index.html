@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Interactive Chess Pathfinding</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Interactive Chess Pathfinding & Analysis</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body data-theme="dark">
 
     <div class="app-container">
         <header class="text-center mb-4">
-            <h1 class="app-title">Interactive Chess Pathfinding</h1>
-            <p class="app-subtitle">Algorithm Visualization & Comparison</p>
+            <h1 class="app-title">Interactive Chess Pathfinding & Analysis</h1>
+            <p class="app-subtitle">Tour, Path, Heatmap, & Comparison Visualization</p>
         </header>
 
         <main class="main-content">
@@ -24,16 +24,18 @@
                 <div class="control-group">
                     <label class="control-label">Theme</label>
                     <div id="theme-selector" class="segmented-control">
-                        <button data-theme="dark" class="theme-btn active-theme">Dark</button>
+                        <button data-theme="dark" class="theme-btn">Dark</button>
                         <button data-theme="light" class="theme-btn">Light</button>
                         <button data-theme="wood" class="theme-btn">Wood</button>
                     </div>
                 </div>
                 <div class="control-group">
                     <label class="control-label">Mode</label>
-                    <div id="mode-selector" class="segmented-control">
-                        <button data-mode="tour" class="mode-btn active-mode">Full Tour</button>
-                        <button data-mode="path" class="mode-btn">Shortest Path</button>
+                    <div id="mode-selector" class="segmented-control-quad">
+                        <button data-mode="tour" class="mode-btn">Tour</button>
+                        <button data-mode="path" class="mode-btn">Path</button>
+                        <button data-mode="heatmap" class="mode-btn">Heatmap</button>
+                        <button data-mode="compare" class="mode-btn">Compare</button>
                     </div>
                 </div>
                  <div class="control-group">
@@ -41,16 +43,20 @@
                         <label for="boardSize" class="control-label">Board Size</label>
                         <span id="boardSizeLabel" class="text-sm font-medium text-text-secondary">8x8</span>
                     </div>
-                    <input type="range" id="boardSize" class="slider" min="4" max="12" step="1" value="8">
+                    <input type="range" id="boardSize" class="slider" min="5" max="12" step="1" value="8">
                 </div>
 
                 <!-- PIECE, POSITIONS -->
                 <div class="control-group space-y-3">
                     <div>
-                        <label for="pieceSelect" class="control-label mb-1">Piece</label>
+                        <label for="pieceSelect" class="control-label mb-1" id="pieceSelectLabel">Piece</label>
                         <select id="pieceSelect" class="control-input"></select>
                     </div>
-                    <div>
+                     <div id="pieceSelect2-container" class="hidden">
+                        <label for="pieceSelect2" class="control-label mb-1">Comparison Piece</label>
+                        <select id="pieceSelect2" class="control-input"></select>
+                    </div>
+                    <div id="start-pos-container">
                         <label for="startPos" class="control-label mb-1">Start (or click board)</label>
                         <select id="startPos" class="control-input"></select>
                     </div>
@@ -59,63 +65,75 @@
                         <select id="endPos" class="control-input"></select>
                     </div>
                 </div>
-                
-                <button id="calculateBtn" class="calculate-btn">Calculate</button>
-                <p class="text-xs text-text-secondary text-center mt-2">Right-click or long-press to add obstacles.</p>
 
-                <!-- ANIMATION CONTROLS -->
-                <div id="animation-controls" class="control-group space-y-4">
-                    <div class="grid grid-cols-3 gap-2">
-                        <button id="startBtn" class="control-btn bg-green-600 hover:bg-green-500">Start</button>
-                        <button id="pauseBtn" class="control-btn bg-yellow-500 hover:bg-yellow-400 text-gray-900">Pause</button>
-                        <button id="resetBtn" class="control-btn bg-red-600 hover:bg-red-500">Reset</button>
-                    </div>
-                     <div class="grid grid-cols-2 gap-2">
-                        <button id="stepBackBtn" class="control-btn bg-gray-600 hover:bg-gray-500">Back</button>
-                        <button id="stepForwardBtn" class="control-btn bg-gray-600 hover:bg-gray-500">Next</button>
+                <!-- ALGORITHM VISUALIZATION TOGGLE -->
+                <div id="viz-controls-container" class="control-group hidden">
+                    <label class="control-label">Visualization</label>
+                    <div class="flex items-center justify-between bg-bg-tertiary p-2 rounded-md">
+                        <span id="viz-algo-label" class="text-sm font-medium text-text-primary">Animate Algorithm</span>
+                        <label class="switch">
+                            <input type="checkbox" id="viz-algo-toggle">
+                            <span class="switch-slider"></span>
+                        </label>
                     </div>
                 </div>
+                
+                <button id="calculateBtn" class="calculate-btn">Calculate</button>
+                <div class="grid grid-cols-2 gap-2 mt-2">
+                    <button id="shareBtn" class="share-btn">Share</button>
+                    <button id="resetBtn" class="share-btn">Reset</button>
+                </div>
+
+                <p class="text-xs text-text-secondary text-center mt-2">Right-click or long-press to add obstacles.</p>
                 <div id="status" class="status-box">Select options and calculate.</div>
             </div>
 
             <div id="board-area-container" class="board-area-container">
                 <!-- Single Board View -->
-                <div id="single-board-view" class="board-view">
-                    <div class="board-area">
-                        <div id="board-container" class="board-container">
-                            <div id="board" class="board"></div>
-                            <svg id="path-svg" class="path-svg"></svg>
-                            <div id="animated-piece" class="animated-piece"></div>
-                        </div>
+                <div id="single-board-view" class="board-area">
+                    <div id="board-container" class="board-container">
+                        <div id="board" class="board"></div>
+                        <svg id="path-svg" class="path-svg"></svg>
+                        <div id="animated-piece" class="animated-piece"></div>
                     </div>
                 </div>
-                <!-- Dual Board View for Path Race -->
-                <div id="dual-board-view" class="dual-board-view hidden">
-                    <div class="board-wrapper">
-                        <h3 class="board-title">BFS (Shortest)</h3>
+                <!-- Comparison Board View -->
+                <div id="compare-board-view" class="hidden w-full h-full">
+                    <div class="compare-grid">
                         <div class="board-area">
-                            <div id="board-container-bfs" class="board-container">
-                                <div id="board-bfs" class="board"></div>
-                                <svg id="path-svg-bfs" class="path-svg"></svg>
+                             <h2 id="compare-title1" class="compare-title"></h2>
+                            <div id="board-container1" class="board-container">
+                                <div id="board1" class="board"></div>
                             </div>
                         </div>
-                        <div id="status-bfs" class="status-box-small">Waiting...</div>
-                    </div>
-                    <div class="board-wrapper">
-                        <h3 class="board-title">Greedy (Fastest)</h3>
                         <div class="board-area">
-                            <div id="board-container-greedy" class="board-container">
-                                <div id="board-greedy" class="board"></div>
-                                <svg id="path-svg-greedy" class="path-svg"></svg>
+                            <h2 id="compare-title2" class="compare-title"></h2>
+                            <div id="board-container2" class="board-container">
+                                <div id="board2" class="board"></div>
                             </div>
                         </div>
-                         <div id="status-greedy" class="status-box-small">Waiting...</div>
                     </div>
                 </div>
             </div>
         </main>
     </div>
-    <script type="module" src="script.js"></script>
+    
+    <!-- Share Modal -->
+    <div id="share-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 class="text-lg font-bold text-text-primary">Share Link</h3>
+            <p class="text-sm text-text-secondary my-2">Copy this link to share or save your current board setup.</p>
+            <input type="text" id="share-url-input" class="control-input" readonly>
+            <div class="mt-4 flex gap-2">
+                <button id="copy-link-btn" class="calculate-btn text-base">Copy</button>
+                <button id="close-modal-btn" class="share-btn text-base">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts loaded in order for stability. No more modules. -->
+    <script src="ui.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
 
