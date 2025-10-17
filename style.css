@@ -1,0 +1,95 @@
+/* Custom styles that complement Tailwind */
+body {
+    font-family: 'Inter', sans-serif;
+    -webkit-tap-highlight-color: transparent; /* Disable tap highlight on mobile */
+}
+
+/* Custom glow effect for the board and controls */
+.neon-glow {
+    box-shadow: 0 0 5px #06b6d4, 0 0 10px #06b6d4, 0 0 15px #06b6d4;
+}
+
+/* Styles for the state of each square on the board */
+.square.current {
+    background-color: #facc15 !important; /* yellow-400 */
+    color: #1f2937 !important; /* gray-800 */
+    transform: scale(1.08);
+    box-shadow: 0 0 12px 5px #facc15cc;
+    z-index: 10;
+}
+
+.square.visited {
+    background-color: #22c55e; /* green-500 */
+    color: #1f2937; /* gray-800 */
+    opacity: 0.8;
+}
+
+.square.highlight-backtrack {
+    background-color: rgba(239, 68, 68, 0.4) !important; /* red-500 with opacity */
+}
+
+/* Custom styling for the range input sliders */
+input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    cursor: pointer;
+    background: transparent;
+}
+input[type=range]:focus {
+    outline: none;
+}
+/* Thumb */
+input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 1.25rem;
+    width: 1.25rem;
+    background-color: #06b6d4;
+    border-radius: 9999px;
+    border: 2px solid #111827;
+    margin-top: -6px; /* Center thumb on track */
+}
+input[type=range]::-moz-range-thumb {
+    height: 1.25rem;
+    width: 1.25rem;
+    background-color: #06b6d4;
+    border-radius: 9999px;
+    border: 2px solid #111827;
+}
+/* Track */
+input[type=range]::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 0.5rem;
+    background-color: #374151;
+    border-radius: 9999px;
+}
+input[type=range]::-moz-range-track {
+     width: 100%;
+    height: 0.5rem;
+    background-color: #374151;
+    border-radius: 9999px;
+}
+
+/* Tooltip styles */
+[data-tooltip] {
+    position: relative;
+}
+[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 110%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #0891b2;
+    color: #f0f9ff;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+    z-index: 1000;
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 0.2s;
+}
