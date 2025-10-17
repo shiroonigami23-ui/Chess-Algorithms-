@@ -1,135 +1,122 @@
 /**
- * script.js
- * This script manages the application state and core logic for the Chess Tour visualizer.
- * It handles tour calculations, animation timing, and user input, but delegates
- * all direct DOM manipulation to the `ui.js` module.
+ * script.js: Manages application state and core logic.
  */
 import * as ui from './ui.js';
 
-// --- STATE MANAGEMENT ---
+// --- STATE ---
 const state = {
     boardSize: 8,
+    mode: 'tour', // 'tour' or 'path'
+    currentPiece: 'knight',
+    startPos: [0, 0],
+    endPos: [7, 7],
     steps: [],
     moveIndex: -1,
     animationInterval: null,
     animDelay: 300,
     isPaused: true,
     isCalculating: false,
-    currentPiece: 'knight'
 };
 
-// --- KNIGHT MOVES ---
-const knightMoves = [
-    [2, 1], [1, 2], [-1, 2], [-2, 1],
-    [-2, -1], [-1, -2], [1, -2], [2, -1]
-];
+// --- MOVESET DEFINITIONS ---
+const pieceMoves = {
+    knight: [[2, 1], [1, 2], [-1, 2], [-2, 1], [-2, -1], [-1, -2], [1, -2], [2, -1]],
+    rook: [[0, 1], [0, -1], [1, 0], [-1, 0]],
+    bishop: [[1, 1], [1, -1], [-1, 1], [-1, -1]],
+    queen: [[0, 1], [0, -1], [1, 0], [-1, 0], [1, 1], [1, -1], [-1, 1], [-1, -1]],
+};
 
-// --- UTILITY FUNCTIONS ---
+const isSlidingPiece = { rook: true, bishop: true, queen: true, knight: false };
+
 const positionToString = (r, c) => `${String.fromCharCode(97 + c)}${state.boardSize - r}`;
+const isSafe = (r, c) => r >= 0 && c >= 0 && r < state.boardSize && c < state.boardSize;
 
-// --- TOUR ALGORITHMS ---
+// --- ALGORITHMS ---
 
-function getKnightTour(startRow, startCol) {
-    let visitedGrid = Array(state.boardSize).fill(null).map(() => Array(state.boardSize).fill(false));
+function getKnightTour(startR, startC) {
+    let visited = Array(state.boardSize).fill(0).map(() => Array(state.boardSize).fill(false));
     let path = [];
-    let tourFound = false;
-
-    function isSafe(x, y) {
-        return x >= 0 && y >= 0 && x < state.boardSize && y < state.boardSize && !visitedGrid[x][y];
-    }
-
-    function getNextMovesOrdered(x, y) {
-        const possibleMoves = [];
-        for (const [dx, dy] of knightMoves) {
-            let nx = x + dx, ny = y + dy;
-            if (isSafe(nx, ny)) {
-                let onwardCount = 0;
-                for (const [ddx, ddy] of knightMoves) {
-                    if (isSafe(nx + ddx, ny + ddy)) onwardCount++;
+    
+    function getNextMoves(r, c) {
+        const moves = [];
+        for (const [dr, dc] of pieceMoves.knight) {
+            const nr = r + dr, nc = c + dc;
+            if (isSafe(nr, nc) && !visited[nr][nc]) {
+                let count = 0;
+                for (const [dr2, dc2] of pieceMoves.knight) {
+                    if (isSafe(nr + dr2, nc + dc2) && !visited[nr + dr2][nc + dc2]) count++;
                 }
-                possibleMoves.push({ pos: [nx, ny], onward: onwardCount });
+                moves.push({ r: nr, c: nc, count });
             }
         }
-        possibleMoves.sort((a, b) => a.onward - b.onward);
-        return possibleMoves.map(m => m.pos);
+        return moves.sort((a, b) => a.count - b.count);
     }
 
-    function solve(x, y, moveCount) {
-        visitedGrid[x][y] = true;
-        path.push([x, y]);
-
-        if (moveCount === state.boardSize * state.boardSize) {
-            tourFound = true;
-            return true;
+    function solve(r, c) {
+        visited[r][c] = true;
+        path.push([r, c]);
+        if (path.length === state.boardSize * state.boardSize) return true;
+        const nextMoves = getNextMoves(r, c);
+        for (const move of nextMoves) {
+            if (solve(move.r, move.c)) return true;
         }
-
-        const nextMoves = getNextMovesOrdered(x, y);
-        for (const [nx, ny] of nextMoves) {
-            if (tourFound) return true;
-            if (solve(nx, ny, moveCount + 1)) return true;
-        }
-
-        // Backtrack
-        visitedGrid[x][y] = false;
+        visited[r][c] = false;
         path.pop();
         return false;
     }
-
-    solve(startRow, startCol, 1);
+    solve(startR, startC);
     return path;
 }
-    
-function getRookTour(startRow, startCol) {
-    const path = [];
-    const visited = new Set();
-    
-    path.push([startRow, startCol]);
-    visited.add(`${startRow},${startCol}`);
-    
-    for (let r = 0; r < state.boardSize; r++) {
-        const rowOrder = (r % 2 === 0) ? Array.from({length: state.boardSize}, (_, i) => i) : Array.from({length: state.boardSize}, (_, i) => state.boardSize - 1 - i);
-        for(const c of rowOrder) {
-             if (!visited.has(`${r},${c}`)) {
-                path.push([r, c]);
-                visited.add(`${r},${c}`);
+
+function getSimpleTour(piece, startR, startC) {
+    // Simplified tour for other pieces for demonstration
+    const path = [[startR, startC]];
+    const visited = new Set([`${startR},${startC}`]);
+    let r = startR, c = startC;
+    while(path.length < state.boardSize * state.boardSize){
+        c++;
+        if(c >= state.boardSize){ c=0; r = (r+1)%state.boardSize; }
+        if(!visited.has(`${r},${c}`)){
+            path.push([r,c]);
+            visited.add(`${r},${c}`);
+        }
+    }
+    return path;
+}
+
+function getShortestPath(piece, start, end) {
+    const queue = [[start, [start]]]; // [[pos], [path]]
+    const visited = new Set([`${start[0]},${start[1]}`]);
+
+    while (queue.length > 0) {
+        const [[r, c], path] = queue.shift();
+        if (r === end[0] && c === end[1]) return path;
+
+        const moves = pieceMoves[piece];
+        for (const [dr, dc] of moves) {
+            let nr = r + dr, nc = c + dc;
+            
+            if (isSlidingPiece[piece]) {
+                 while(isSafe(nr, nc)) {
+                    if (!visited.has(`${nr},${nc}`)) {
+                        visited.add(`${nr},${nc}`);
+                        queue.push([[nr, nc], [...path, [nr, nc]]]);
+                    }
+                    nr += dr; nc += dc;
+                 }
+            } else { // Knight
+                if (isSafe(nr, nc) && !visited.has(`${nr},${nc}`)) {
+                    visited.add(`${nr},${nc}`);
+                    queue.push([[nr, nc], [...path, [nr, nc]]]);
+                }
             }
         }
     }
-    const startIndex = path.findIndex(([r,c]) => r === startRow && c === startCol);
-    if(startIndex > 0){
-         const startElement = path.splice(startIndex, 1);
-         path.unshift(startElement[0]);
-    }
-    return path;
+    return []; // No path found
 }
 
-function getBishopTour(startRow, startCol) {
-    const path = [];
-    const startColor = (startRow + startCol) % 2;
-    for (let r = 0; r < state.boardSize; r++) {
-        for (let c = 0; c < state.boardSize; c++) {
-            if ((r + c) % 2 === startColor) {
-                path.push([r, c]);
-            }
-        }
-    }
-    const startIndex = path.findIndex(([r,c]) => r === startRow && c === startCol);
-    if (startIndex > 0) {
-        const startElement = path.splice(startIndex, 1);
-        path.unshift(startElement[0]);
-    }
-    return path;
-}
 
-function getQueenTour(startRow, startCol) {
-    const rookPath = getRookTour(startRow, startCol);
-    const visited = new Set(rookPath.map(([r, c]) => `${r},${c}`));
-    const bishopPath = getBishopTour(startRow, startCol);
-    const uniqueBishop = bishopPath.filter(([r,c]) => !visited.has(`${r},${c}`));
-    return [...rookPath, ...uniqueBishop];
-}
-
-// --- ANIMATION & STATE LOGIC ---
+// --- ANIMATION & STATE ---
 
 function runStep(index) {
     if (index < -1 || index >= state.steps.length) return;
@@ -141,19 +128,12 @@ function runStep(index) {
 function startAnimation() {
     if (state.steps.length === 0 || !state.isPaused) return;
     state.isPaused = false;
-    
-    if (state.moveIndex >= state.steps.length - 1) {
-        state.moveIndex = -1;
-    }
-    
+    if (state.moveIndex >= state.steps.length - 1) state.moveIndex = -1;
     ui.updateControls(state);
 
     state.animationInterval = setInterval(() => {
-        if (state.moveIndex >= state.steps.length - 1) {
-            pauseAnimation();
-        } else {
-            runStep(state.moveIndex + 1);
-        }
+        if (state.moveIndex >= state.steps.length - 1) pauseAnimation();
+        else runStep(state.moveIndex + 1);
     }, state.animDelay);
 }
 
@@ -168,115 +148,98 @@ function resetAnimation() {
     pauseAnimation();
     state.moveIndex = -1;
     runStep(-1);
-    ui.updateStatus('Ready to start');
+    ui.updateStatus('Calculation complete. Ready to animate.');
 }
 
 // --- EVENT HANDLERS ---
 
-function handleGenerateTour() {
+function handleCalculation() {
     pauseAnimation();
     state.isCalculating = true;
     ui.updateControls(state);
-    
-    const startPosSelect = document.getElementById('startPos');
-    const [startRow, startCol] = startPosSelect.value.split(',').map(Number);
-    state.currentPiece = document.getElementById('pieceSelect').value;
-    
-    ui.updateStatus(`Calculating ${state.currentPiece} tour...`);
+    updateStateFromInputs();
 
-    // Use setTimeout to allow the UI to update before the heavy calculation
+    ui.updateStatus(`Calculating ${state.currentPiece} ${state.mode}...`);
+
     setTimeout(() => {
-        switch(state.currentPiece) {
-            case 'knight': state.steps = getKnightTour(startRow, startCol); break;
-            case 'rook': state.steps = getRookTour(startRow, startCol); break;
-            case 'bishop': state.steps = getBishopTour(startRow, startCol); break;
-            case 'queen': state.steps = getQueenTour(startRow, startCol); break;
+        if (state.mode === 'tour') {
+            state.steps = state.currentPiece === 'knight' 
+                ? getKnightTour(...state.startPos)
+                : getSimpleTour(state.currentPiece, ...state.startPos);
+        } else {
+            state.steps = getShortestPath(state.currentPiece, state.startPos, state.endPos);
         }
 
         state.isCalculating = false;
         if (state.steps.length > 0) {
-             ui.updateStatus(`Tour found! Length: ${state.steps.length}`);
+            const message = state.mode === 'tour' 
+                ? `Tour found! Length: ${state.steps.length}`
+                : `Shortest path found in ${state.steps.length - 1} moves.`;
+            ui.updateStatus(message);
+            resetAnimation();
+            if (state.mode === 'path') {
+                runStep(state.steps.length - 1); // Show full path instantly
+            } else {
+                 runStep(0); // Show first step for tour
+            }
         } else {
-             ui.updateStatus(`No full tour found for ${state.currentPiece}.`);
+            ui.updateStatus(`No path found for ${state.currentPiece}.`);
+            state.steps = [];
+            resetAnimation();
         }
-        resetAnimation();
-        runStep(0); // Show the first step
-        pauseAnimation(); // But keep it paused
+        ui.updateControls(state);
     }, 50);
 }
 
 function handleSquareClick(r, c) {
     if (state.isCalculating) return;
-    ui.updateStartPosDropdown(r, c);
-    handleGenerateTour();
+    ui.updatePositionDropdown('start', r, c);
+    handleCalculation();
 }
 
-function handleKeyboard(e) {
-    if (['INPUT', 'SELECT'].includes(e.target.tagName)) return;
-    
-    const keyMap = {
-        ' ': () => state.isPaused ? startAnimation() : pauseAnimation(),
-        'ArrowRight': () => document.getElementById('stepForwardBtn').click(),
-        'ArrowLeft': () => document.getElementById('stepBackBtn').click(),
-        'r': () => document.getElementById('resetBtn').click(),
-        'R': () => document.getElementById('resetBtn').click(),
-    };
-
-    if (keyMap[e.key]) {
-        e.preventDefault();
-        keyMap[e.key]();
-    }
+function updateStateFromInputs() {
+    state.currentPiece = document.getElementById('pieceSelect').value;
+    state.startPos = document.getElementById('startPos').value.split(',').map(Number);
+    state.endPos = document.getElementById('endPos').value.split(',').map(Number);
 }
 
 // --- INITIALIZATION ---
 function init() {
-    // Setup UI
     ui.initialize(state.boardSize, handleSquareClick);
-    ui.fillStartPositionOptions(state.boardSize, positionToString);
-    
-    // Add Event Listeners
-    const controls = {
-        startBtn: startAnimation,
-        pauseBtn: pauseAnimation,
-        resetBtn: resetAnimation,
-        stepForwardBtn: () => runStep(state.moveIndex + 1),
-        stepBackBtn: () => runStep(state.moveIndex - 1),
-        pieceSelect: handleGenerateTour,
-        startPos: handleGenerateTour
-    };
+    ui.populateAllSelects(state.boardSize, positionToString);
+    ui.setMode(state.mode);
+    ui.updateControls(state);
 
-    document.getElementById('startBtn').addEventListener('click', controls.startBtn);
-    document.getElementById('pauseBtn').addEventListener('click', controls.pauseBtn);
-    document.getElementById('resetBtn').addEventListener('click', controls.resetBtn);
-    document.getElementById('stepForwardBtn').addEventListener('click', controls.stepForwardBtn);
-    document.getElementById('stepBackBtn').addEventListener('click', controls.stepBackBtn);
-    document.getElementById('pieceSelect').addEventListener('change', controls.pieceSelect);
-    document.getElementById('startPos').addEventListener('change', controls.startPos);
+    // Event Listeners
+    document.getElementById('calculateBtn').addEventListener('click', handleCalculation);
+    document.getElementById('startBtn').addEventListener('click', startAnimation);
+    document.getElementById('pauseBtn').addEventListener('click', pauseAnimation);
+    document.getElementById('resetBtn').addEventListener('click', resetAnimation);
+    document.getElementById('stepForwardBtn').addEventListener('click', () => runStep(state.moveIndex + 1));
+    document.getElementById('stepBackBtn').addEventListener('click', () => runStep(state.moveIndex - 1));
+    
+    document.getElementById('mode-selector').addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON') {
+            state.mode = e.target.dataset.mode;
+            ui.setMode(state.mode);
+        }
+    });
 
     document.getElementById('speedRange').addEventListener('input', (e) => {
         state.animDelay = parseInt(e.target.value, 10);
         ui.updateControls(state);
-        if (!state.isPaused) { // If animation is running, restart with new speed
-            pauseAnimation();
-            startAnimation();
-        }
+        if (!state.isPaused) { pauseAnimation(); startAnimation(); }
     });
 
     document.getElementById('stepJump').addEventListener('input', (e) => {
         pauseAnimation();
         runStep(parseInt(e.target.value, 10));
     });
-
-    window.addEventListener('keydown', handleKeyboard);
-    // Handle resize to recalculate square sizes
+    
     window.addEventListener('resize', () => {
         ui.initialize(state.boardSize, handleSquareClick);
         ui.renderBoardState(state);
     });
-
-    // Initial tour generation
-    handleGenerateTour();
 }
 
-// Wait for the DOM to be fully loaded before running the script
 document.addEventListener('DOMContentLoaded', init);
