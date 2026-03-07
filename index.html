@@ -1,236 +1,219 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultimate Algorithm Racing & Learning Platform</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <title>Chess Algorithms Lab</title>
+    <script defer src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
-<body data-theme="dark">
-
-    <div class="app-container">
-        <!-- HEADER -->
-        <header class="header">
-            <h1 class="app-title">🏁 Ultimate Algorithm Racing & Learning Platform</h1>
-            <p class="app-subtitle">Compete Algorithms • Visualize Paths • Master Strategies • Race to Victory!</p>
+<body data-theme="light" class="min-h-screen theme-body">
+    <div class="mx-auto max-w-[1600px] px-4 py-4 lg:px-6">
+        <header class="surface-card mb-4 rounded-2xl border px-6 py-5">
+            <div class="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                    <h1 class="text-2xl font-extrabold tracking-tight">Chess Algorithms Lab</h1>
+                    <p class="text-sm opacity-80">Understand algorithm behavior, compare outcomes, and identify the best strategy per board setup.</p>
+                </div>
+                <div class="text-xs opacity-70">Learning-first visual playground · Client-side only</div>
+            </div>
         </header>
 
-        <!-- MAIN CONTENT -->
-        <main class="main-content">
+        <main class="grid gap-4 xl:grid-cols-[360px_minmax(0,1fr)]">
+            <aside class="surface-card rounded-2xl border p-4">
+                <div class="mb-3 text-xs font-semibold uppercase tracking-widest opacity-70">Controls</div>
 
-            <!-- LEFT CONTROL PANEL -->
-            <aside class="controls-panel">
-
-                <!-- Theme -->
-                <div class="control-group">
-                    <label class="control-label">🎨 Theme</label>
-                    <div id="themeSelector" class="segmented-control">
-                        <button data-theme="dark" class="theme-btn active">Dark</button>
-                        <button data-theme="light" class="theme-btn">Light</button>
-                        <button data-theme="wood" class="theme-btn">Wood</button>
-                        <button data-theme="neon" class="theme-btn">Neon</button>
-                    </div>
-                </div>
-
-                <!-- Mode Selector -->
-                <div class="control-group">
-                    <label class="control-label">🎯 Mode</label>
-                    <div id="modeSelector" class="segmented-control-quad">
-                        <button data-mode="tour" class="mode-btn">Tour</button>
-                        <button data-mode="path" class="mode-btn">Path</button>
-                        <button data-mode="heatmap" class="mode-btn">Heatmap</button>
-                        <button data-mode="compare" class="mode-btn">Compare</button>
-                        <button data-mode="race" class="mode-btn active">🏁 Race</button>
-                        <button data-mode="learn" class="mode-btn">📚 Learn</button>
-                    </div>
-                </div>
-
-                <!-- Board Size -->
-                <div class="control-group">
-                    <label class="control-label">📐 Board: <span id="boardSizeLabel">8x8</span></label>
-                    <input type="range" id="boardSize" class="slider" min="4" max="16" value="8" step="1">
-                </div>
-
-                <!-- Piece Selector -->
-                <div class="control-group">
-                    <label class="control-label">♞ Piece</label>
-                    <select id="pieceSelect" class="control-input">
-                        <option value="knight">♞ Knight</option>
-                        <option value="rook">♜ Rook</option>
-                        <option value="bishop">♝ Bishop</option>
-                        <option value="queen">♛ Queen</option>
-                        <option value="king">♚ King</option>
-                        <option value="pawn">♟ Pawn</option>
-                    </select>
-                </div>
-
-                <!-- Race Mode Settings -->
-                <div class="control-group" id="raceModeSettings">
-                    <label class="control-label">🏁 Race Settings</label>
-                    <div class="race-settings">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="raceBFS" checked>
-                            <span>BFS (Breadth-First)</span>
-                        </label>
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="raceDFS" checked>
-                            <span>DFS (Depth-First)</span>
-                        </label>
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="raceAStar" checked>
-                            <span>A* (Heuristic)</span>
-                        </label>
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="raceDijkstra" checked>
-                            <span>Dijkstra</span>
-                        </label>
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="raceQuantum" checked>
-                            <span>🔮 Quantum</span>
-                        </label>
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="raceBidirectional">
-                            <span>Bidirectional BFS</span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Positions -->
-                <div class="control-group">
-                    <label class="control-label">🎯 Start Position</label>
-                    <select id="startPos" class="control-input"></select>
-                </div>
-
-                <div class="control-group" id="endPosContainer">
-                    <label class="control-label">🏁 End Position</label>
-                    <select id="endPos" class="control-input"></select>
-                </div>
-
-                <!-- Speed Control -->
-                <div class="control-group">
-                    <label class="control-label">⚡ Speed: <span id="speedValue">1.0x</span></label>
-                    <input type="range" id="speedSlider" class="slider" min="10" max="500" value="100" step="10">
-                    <div class="speed-presets">
-                        <button class="preset-btn" data-speed="10">0.1x</button>
-                        <button class="preset-btn" data-speed="25">0.25x</button>
-                        <button class="preset-btn" data-speed="50">0.5x</button>
-                        <button class="preset-btn" data-speed="100">1x</button>
-                        <button class="preset-btn" data-speed="200">2x</button>
-                        <button class="preset-btn" data-speed="500">5x</button>
-                    </div>
-                </div>
-
-                <!-- Visualization Options -->
-                <div class="control-group">
-                    <label class="control-label">👁️ Visualization</label>
-                    <div class="viz-options">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="showAnimation" checked>
-                            <span>Animate Exploration</span>
-                        </label>
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="showNumbers" checked>
-                            <span>Show Distance Numbers</span>
-                        </label>
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="showPath" checked>
-                            <span>Highlight Final Path</span>
-                        </label>
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="showStats" checked>
-                            <span>📊 Live Statistics</span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Playback Controls -->
-                <div class="control-group" id="playbackControls" class="hidden">
-                    <label class="control-label">🎬 Playback</label>
-                    <div class="playback-buttons">
-                        <button id="playBtn" class="ctrl-btn">▶️ Play</button>
-                        <button id="pauseBtn" class="ctrl-btn">⏸️ Pause</button>
-                        <button id="stepBtn" class="ctrl-btn">⏭️ Step</button>
-                        <button id="restartBtn" class="ctrl-btn">🔄 Restart</button>
-                    </div>
-                    <div class="progress-container">
-                        <div class="progress-bar">
-                            <div id="progressFill" class="progress-fill"></div>
+                <details class="section-collapse">
+                    <summary><i data-lucide="layout-dashboard" class="ic"></i>Workspace</summary>
+                    <div class="section-body">
+                        <label class="field-label">Theme</label>
+                        <div id="themeSelector" class="grid grid-cols-3 gap-2">
+                            <button data-theme="light" class="theme-btn ctrl-pill active">Light</button>
+                            <button data-theme="dark" class="theme-btn ctrl-pill">Dark</button>
+                            <button data-theme="classic" class="theme-btn ctrl-pill">Classic</button>
                         </div>
-                        <span id="progressText" class="progress-text">Ready</span>
-                    </div>
-                </div>
 
-                <!-- Calculate Button -->
-                <button id="calculateBtn" class="calculate-btn">🚀 Start Race / Calculate</button>
-
-                <!-- Status -->
-                <div id="statusBox" class="status-box">Ready to race! Select algorithms and click Start.</div>
-
-                <!-- Race Leaderboard -->
-                <div class="control-group" id="raceLeaderboard" class="hidden">
-                    <label class="control-label">🏆 Race Results</label>
-                    <div id="leaderboardContent" class="leaderboard-content"></div>
-                </div>
-
-                <!-- Statistics -->
-                <div class="control-group stats-panel" id="statsPanel">
-                    <label class="control-label">📊 Statistics</label>
-                    <div class="stat-grid" id="statsGrid">
-                        <div class="stat-item">
-                            <span class="stat-label">Path Length:</span>
-                            <span class="stat-value" id="statPath">-</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Nodes Explored:</span>
-                            <span class="stat-value" id="statNodes">-</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Time:</span>
-                            <span class="stat-value" id="statTime">-</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Efficiency:</span>
-                            <span class="stat-value" id="statEfficiency">-</span>
+                        <label class="field-label">Mode</label>
+                        <div id="modeSelector" class="grid grid-cols-3 gap-2">
+                            <button data-mode="tour" class="mode-btn ctrl-pill">Tour</button>
+                            <button data-mode="path" class="mode-btn ctrl-pill">Path</button>
+                            <button data-mode="heatmap" class="mode-btn ctrl-pill">Heatmap</button>
+                            <button data-mode="compare" class="mode-btn ctrl-pill">Compare</button>
+                            <button data-mode="race" class="mode-btn ctrl-pill active">Race</button>
+                            <button data-mode="learn" class="mode-btn ctrl-pill">Learn</button>
                         </div>
                     </div>
-                </div>
+                </details>
 
-                <!-- Algorithm Info -->
-                <div class="control-group algo-info" id="algoInfo">
-                    <label class="control-label">📖 Algorithm Info</label>
-                    <div class="algo-content" id="algoContent">
-                        Select a mode and algorithm to see detailed explanation.
+                <details class="section-collapse">
+                    <summary><i data-lucide="chess-knight" class="ic"></i>Board & Piece</summary>
+                    <div class="section-body">
+                        <label class="field-label">Board Size: <span id="boardSizeLabel">8x8</span></label>
+                        <input type="range" id="boardSize" class="w-full" min="4" max="16" value="8" step="1">
+
+                        <label class="field-label">Chess Piece</label>
+                        <select id="pieceSelect" class="control-input">
+                            <option value="knight">Knight</option>
+                            <option value="rook">Rook</option>
+                            <option value="bishop">Bishop</option>
+                            <option value="queen">Queen</option>
+                            <option value="king">King</option>
+                            <option value="pawn">Pawn</option>
+                        </select>
+
+                        <div id="pathAlgoContainer">
+                            <label class="field-label">Path Algorithm</label>
+                            <select id="pathAlgo" class="control-input">
+                                <option value="BFS" selected>BFS</option>
+                                <option value="DFS">DFS</option>
+                                <option value="AStar">A*</option>
+                                <option value="Dijkstra">Dijkstra</option>
+                                <option value="Quantum">Quantum</option>
+                                <option value="Bidirectional">Bidirectional BFS</option>
+                            </select>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="field-label">Start</label>
+                                <select id="startPos" class="control-input"></select>
+                            </div>
+                            <div id="endPosContainer">
+                                <label class="field-label">End</label>
+                                <select id="endPos" class="control-input"></select>
+                            </div>
+                        </div>
+                    </div>
+                </details>
+
+                <details id="raceModeSettings" class="section-collapse">
+                    <summary><i data-lucide="flag" class="ic"></i>Race Algorithms</summary>
+                    <div class="section-body">
+                        <label class="checkbox-label"><input type="checkbox" id="raceBFS" checked> BFS</label>
+                        <label class="checkbox-label"><input type="checkbox" id="raceDFS" checked> DFS</label>
+                        <label class="checkbox-label"><input type="checkbox" id="raceAStar" checked> A*</label>
+                        <label class="checkbox-label"><input type="checkbox" id="raceDijkstra" checked> Dijkstra</label>
+                        <label class="checkbox-label"><input type="checkbox" id="raceQuantum" checked> Quantum</label>
+                        <label class="checkbox-label"><input type="checkbox" id="raceBidirectional"> Bidirectional BFS</label>
+                    </div>
+                </details>
+
+                <details id="compareModeSettings" class="section-collapse hidden">
+                    <summary><i data-lucide="git-compare" class="ic"></i>Compare Setup</summary>
+                    <div class="section-body">
+                        <label class="field-label">Algorithm A</label>
+                        <select id="compareAlgo1" class="control-input">
+                            <option value="BFS">BFS</option>
+                            <option value="DFS">DFS</option>
+                            <option value="AStar" selected>A*</option>
+                            <option value="Dijkstra">Dijkstra</option>
+                            <option value="Quantum">Quantum</option>
+                            <option value="Bidirectional">Bidirectional BFS</option>
+                        </select>
+
+                        <label class="field-label">Algorithm B</label>
+                        <select id="compareAlgo2" class="control-input">
+                            <option value="BFS" selected>BFS</option>
+                            <option value="DFS">DFS</option>
+                            <option value="AStar">A*</option>
+                            <option value="Dijkstra">Dijkstra</option>
+                            <option value="Quantum">Quantum</option>
+                            <option value="Bidirectional">Bidirectional BFS</option>
+                        </select>
+                    </div>
+                </details>
+
+                <details class="section-collapse">
+                    <summary><i data-lucide="gauge" class="ic"></i>Animation & Playback</summary>
+                    <div class="section-body">
+                        <label class="field-label">Speed: <span id="speedValue">1.0x</span></label>
+                        <input type="range" id="speedSlider" class="w-full" min="10" max="500" value="100" step="10">
+                        <div class="grid grid-cols-3 gap-2">
+                            <button class="preset-btn ctrl-pill" data-speed="10">0.1x</button>
+                            <button class="preset-btn ctrl-pill" data-speed="25">0.25x</button>
+                            <button class="preset-btn ctrl-pill" data-speed="50">0.5x</button>
+                            <button class="preset-btn ctrl-pill" data-speed="100">1x</button>
+                            <button class="preset-btn ctrl-pill" data-speed="200">2x</button>
+                            <button class="preset-btn ctrl-pill" data-speed="500">5x</button>
+                        </div>
+
+                        <div class="grid gap-1 text-sm">
+                            <label class="checkbox-label"><input type="checkbox" id="showAnimation" checked> Animate exploration</label>
+                            <label class="checkbox-label"><input type="checkbox" id="showNumbers" checked> Show cost/step numbers</label>
+                            <label class="checkbox-label"><input type="checkbox" id="showPath" checked> Highlight final path</label>
+                            <label class="checkbox-label"><input type="checkbox" id="showStats" checked> Show live stats</label>
+                        </div>
+
+                        <div id="playbackControls" class="hidden">
+                            <div class="grid grid-cols-2 gap-2">
+                                <button id="playBtn" class="ctrl-pill"><i data-lucide="play" class="ic"></i>Play</button>
+                                <button id="pauseBtn" class="ctrl-pill"><i data-lucide="pause" class="ic"></i>Pause</button>
+                                <button id="stepBtn" class="ctrl-pill"><i data-lucide="step-forward" class="ic"></i>Step</button>
+                                <button id="restartBtn" class="ctrl-pill"><i data-lucide="rotate-ccw" class="ic"></i>Restart</button>
+                            </div>
+                            <div class="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200">
+                                <div id="progressFill" class="h-full w-0 progress-fill"></div>
+                            </div>
+                            <div id="progressText" class="mt-1 text-xs opacity-75">Ready</div>
+                        </div>
+                    </div>
+                </details>
+
+                <button id="calculateBtn" class="primary-btn mt-4 w-full"><i data-lucide="rocket" class="ic"></i>Start / Calculate</button>
+
+                <div id="statusBox" class="surface-inset mt-3 rounded-xl border p-3 text-sm">Ready to run.</div>
+
+                <div id="raceLeaderboard" class="section-collapse hidden mt-3">
+                    <div class="section-body">
+                        <div class="mb-2 text-sm font-semibold">Race Ranking</div>
+                        <div id="leaderboardContent" class="leaderboard-content"></div>
                     </div>
                 </div>
 
-                <!-- Actions -->
-                <div class="control-group">
-                    <div class="button-row">
-                        <button id="shareBtn" class="action-btn">📤 Share</button>
-                        <button id="resetBtn" class="action-btn">🔄 Reset</button>
-                        <button id="saveBtn" class="action-btn">💾 Save</button>
+                <details id="statsPanel" class="section-collapse mt-3">
+                    <summary><i data-lucide="bar-chart-3" class="ic"></i>Metrics</summary>
+                    <div class="section-body">
+                        <div class="grid grid-cols-2 gap-2 text-sm">
+                            <div class="metric-card"><span>Path Length</span><strong id="statPath">-</strong></div>
+                            <div class="metric-card"><span>Nodes</span><strong id="statNodes">-</strong></div>
+                            <div class="metric-card"><span>Time</span><strong id="statTime">-</strong></div>
+                            <div class="metric-card"><span>Efficiency</span><strong id="statEfficiency">-</strong></div>
+                        </div>
                     </div>
+                </details>
+
+                <details class="section-collapse mt-3">
+                    <summary><i data-lucide="book-open" class="ic"></i>Algorithm Notes</summary>
+                    <div class="section-body">
+                        <div id="algoContent" class="text-sm opacity-85">Select a mode and run an algorithm to see explanation.</div>
+                    </div>
+                </details>
+
+                <details class="section-collapse mt-3">
+                    <summary><i data-lucide="activity" class="ic"></i>Monitor & Feedback</summary>
+                    <div class="section-body">
+                        <div class="mb-2 grid grid-cols-2 gap-2">
+                            <button id="clearMonitorBtn" class="ctrl-pill"><i data-lucide="eraser" class="ic"></i>Clear Log</button>
+                            <button id="exportMonitorBtn" class="ctrl-pill"><i data-lucide="file-output" class="ic"></i>Export Log</button>
+                        </div>
+                        <div id="monitorFeed" class="monitor-feed"></div>
+                    </div>
+                </details>
+
+                <div class="mt-3 grid grid-cols-3 gap-2">
+                    <button id="shareBtn" class="ctrl-pill"><i data-lucide="share-2" class="ic"></i>Share</button>
+                    <button id="resetBtn" class="ctrl-pill"><i data-lucide="refresh-cw" class="ic"></i>Reset</button>
+                    <button id="saveBtn" class="ctrl-pill"><i data-lucide="save" class="ic"></i>Save</button>
                 </div>
 
-                <!-- Export -->
-                <div class="control-group">
-                    <label class="control-label">💾 Export</label>
-                    <div class="export-buttons">
-                        <button id="exportCsv" class="export-btn">CSV</button>
-                        <button id="exportJson" class="export-btn">JSON</button>
-                        <button id="exportImage" class="export-btn">PNG</button>
-                    </div>
+                <div class="mt-3 grid grid-cols-3 gap-2">
+                    <button id="exportCsv" class="ctrl-pill"><i data-lucide="sheet" class="ic"></i>CSV</button>
+                    <button id="exportJson" class="ctrl-pill"><i data-lucide="braces" class="ic"></i>JSON</button>
+                    <button id="exportImage" class="ctrl-pill"><i data-lucide="image" class="ic"></i>PNG</button>
                 </div>
-
             </aside>
 
-            <!-- RIGHT BOARD AREA -->
-            <section class="board-area">
-
-                <!-- Single Board (Tour, Path, Heatmap) -->
+            <section class="surface-card rounded-2xl border p-4">
                 <div id="singleBoardView" class="single-board-view hidden">
                     <div class="board-wrapper">
                         <div id="mainBoard" class="chess-board"></div>
@@ -239,66 +222,56 @@
                     </div>
                 </div>
 
-                <!-- Compare View -->
                 <div id="compareView" class="compare-view hidden">
-                    <div class="compare-container">
+                    <div class="grid gap-4 xl:grid-cols-2">
                         <div class="compare-item">
                             <h3 id="compareTitle1" class="compare-title">Algorithm 1</h3>
-                            <div class="board-wrapper">
-                                <div id="board1" class="chess-board"></div>
-                            </div>
+                            <div class="board-wrapper"><div id="board1" class="chess-board"></div></div>
                         </div>
                         <div class="compare-item">
                             <h3 id="compareTitle2" class="compare-title">Algorithm 2</h3>
-                            <div class="board-wrapper">
-                                <div id="board2" class="chess-board"></div>
-                            </div>
+                            <div class="board-wrapper"><div id="board2" class="chess-board"></div></div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Race View (Multiple Boards) -->
                 <div id="raceView" class="race-view">
-                    <div class="race-container" id="raceContainer">
-                        <!-- Boards will be dynamically created here -->
-                    </div>
+                    <div id="raceContainer" class="grid gap-4 md:grid-cols-2 2xl:grid-cols-3"></div>
                 </div>
 
-                <!-- Learn View -->
                 <div id="learnView" class="learn-view hidden">
-                    <div class="learn-content">
-                        <h2>📚 Interactive Algorithm Learning</h2>
-                        <div id="learnContent" class="learn-text">
-                            <p>Welcome to the ultimate algorithm learning platform!</p>
-                            <p>Select different modes to learn:</p>
-                            <ul>
-                                <li><strong>Race Mode:</strong> Watch algorithms compete in real-time</li>
-                                <li><strong>Path Mode:</strong> See how different algorithms find paths</li>
-                                <li><strong>Compare Mode:</strong> Side-by-side algorithm comparison</li>
-                            </ul>
+                    <div class="surface-inset rounded-xl border p-4">
+                        <h2 class="mb-2 text-xl font-bold">Learning Hub</h2>
+                        <div id="learnContent" class="learn-text text-sm leading-6 opacity-85">
+                            Pick an algorithm mode and run it to study exploration patterns, efficiency, and trade-offs.
                         </div>
                     </div>
                 </div>
-
             </section>
         </main>
     </div>
 
-    <!-- Share Modal -->
     <div id="shareModal" class="modal-overlay hidden">
         <div class="modal-content">
-            <h2 class="modal-title">📤 Share Configuration</h2>
+            <h2 class="text-lg font-semibold">Share Configuration</h2>
             <input type="text" id="shareInput" readonly class="share-input">
-            <div class="modal-buttons">
-                <button id="copyBtn" class="modal-btn primary">📋 Copy</button>
-                <button id="closeModalBtn" class="modal-btn">✖️ Close</button>
+            <div class="mt-3 grid grid-cols-2 gap-2">
+                <button id="copyBtn" class="primary-btn"><i data-lucide="copy" class="ic"></i>Copy</button>
+                <button id="closeModalBtn" class="ctrl-pill"><i data-lucide="x" class="ic"></i>Close</button>
             </div>
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="algorithms.js"></script>
-    <script src="ui.js"></script>
-    <script src="app.js"></script>
+    <script defer src="https://unpkg.com/lucide@latest"></script>
+    <script defer src="algorithms.js"></script>
+    <script defer src="ui.js"></script>
+    <script defer src="app.js"></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            if (window.lucide?.createIcons) {
+                window.lucide.createIcons();
+            }
+        });
+    </script>
 </body>
 </html>
