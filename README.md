@@ -1,111 +1,172 @@
-﻿# Chess Algorithms Lab
+<div align="center">
 
-Professional, learning-first visual platform to understand chess-pathfinding algorithms, compare them objectively, and identify the best algorithm for a given board configuration.
+<img src="docs/screenshots/home-race.png" alt="Chess Algorithms Lab" width="100%">
 
-## Live Links
-- Live site: **https://shiroonigami23-ui.github.io/Chess-Algorithms-/**
-- Repository: **https://github.com/shiroonigami23-ui/Chess-Algorithms-**
-- Issues / feedback: **https://github.com/shiroonigami23-ui/Chess-Algorithms-/issues**
+# ♞ Chess Algorithms Lab
 
-## Quick Navigation
-- [What this project is for](#what-this-project-is-for)
-- [Core features](#core-features)
-- [Screenshots](#screenshots)
-- [Local run (recommended)](#local-run-recommended)
-- [GitHub workflows](#github-workflows)
+### Learning-first visual lab for chess pathfinding — race BFS, DFS, A*, Dijkstra and more on any board
 
-## What this project is for
-- Study algorithm behavior step-by-step on chess boards.
-- Compare speed, path quality, and exploration cost.
-- Run reproducible experiments with saved/shareable configurations.
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=white) ![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white) ![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white) ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white)
 
-## Core features
-- Modes:
-  - `Race`: multi-algorithm competition on same setup.
-  - `Path`: single algorithm analysis with selectable algorithm.
-  - `Compare`: side-by-side algorithm comparison.
-  - `Tour`: Knight's Tour visualization.
-  - `Heatmap`: reachability distance map.
-  - `Learn`: in-app algorithm explanations.
-- Algorithms:
-  - `BFS`, `DFS`, `A*`, `Dijkstra`, `Quantum`, `Bidirectional BFS`
-  - `Knight's Tour`, `Heatmap`
-- Chess pieces:
-  - `Knight`, `Rook`, `Bishop`, `Queen`, `King`, `Pawn`
-  - Visual piece assets are bundled in `assets/pieces/maestro/`
-- Professional controls:
-  - Collapsible control sections (collapsed by default)
-  - Variable board size (`4x4` to `16x16`)
-  - Speed + playback controls (`play/pause/step/restart`)
-  - Obstacles and start/end placement
-  - Theme system (`light/dark/classic`)
-- Data and export:
-  - `CSV`, `JSON`, and `PNG` export
-  - Shareable URL configs
-  - Local save snapshots
-- Reliability:
-  - In-app monitor feed (events, warnings, runtime errors)
-  - Exportable monitor log (`monitor-log.json`)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE) ![Last commit](https://img.shields.io/github/last-commit/shiroonigami23-ui/Chess-Algorithms-?style=flat-square) ![Repo size](https://img.shields.io/github/repo-size/shiroonigami23-ui/Chess-Algorithms-?style=flat-square) ![Top language](https://img.shields.io/github/languages/top/shiroonigami23-ui/Chess-Algorithms-?style=flat-square) ![Status](https://img.shields.io/badge/status-live-blueviolet?style=flat-square)
 
-## Screenshots
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/shiroonigami23-ui/Chess-Algorithms-?quickstart=1) [![Download ZIP](https://img.shields.io/badge/Download-ZIP-2ea44f?style=flat-square&logo=github)](https://github.com/shiroonigami23-ui/Chess-Algorithms-/archive/refs/heads/main.zip)
 
-### Home / Race View
-![Home Race View](docs/screenshots/home-race.png)
+[**🚀 Live Demo**](https://shiroonigami23-ui.github.io/Chess-Algorithms-/) · [**Overview**](#-overview) · [**Features**](#-features) · [**Architecture**](#-architecture) · [**Getting Started**](#-getting-started) · [**Roadmap**](#-roadmap)
 
-### Heatmap View
-![Heatmap View](docs/screenshots/mode-heatmap.png)
+</div>
 
-### Compare View
-![Compare View](docs/screenshots/mode-compare.png)
+---
 
-## Local run (recommended)
-Run with a local server (fewer browser restrictions and better export behavior):
+## 📸 Preview
 
-```powershell
-cd C:\Users\shiro\OneDrive\Desktop\Presentation\Chess-Algorithms-
-python -m http.server 8080
+<p align="center"><img src="assets/showcase.gif" alt="Chess Algorithms Lab showcase" width="85%"></p>
+
+## 📖 Overview
+
+**Chess Algorithms Lab** makes graph search tangible: place a chess piece, set a start and a goal, add obstacles, and watch
+algorithms explore the board move by move. **Race** several algorithms on the same setup, **compare** them side by side,
+study one in **Path** mode, play the **Knight's Tour**, view a **reachability heat-map**, or read the built-in **Learn**
+notes. Every run produces metrics you can export as CSV, JSON or PNG, and any configuration can be shared as a URL.
+It's 100 % client-side and deployed to GitHub Pages.
+
+### ✨ Highlights
+
+- **8 algorithms** — BFS, DFS, A*, Dijkstra, Quantum, Bidirectional BFS, Knight's Tour, Heatmap
+- **6 pieces** — knight, rook, bishop, queen, king, pawn on 4×4 → 16×16 boards
+- **Six modes** — Race, Path, Compare, Tour, Heatmap, Learn
+- **Shareable experiments** — URL configs + CSV/JSON/PNG export
+
+## 🧩 Features
+
+| Feature | What it does |
+|---|---|
+| **Race mode** | Multiple algorithms compete on the same board |
+| **Compare mode** | Side-by-side metrics and paths |
+| **Path mode** | Deep-dive into one algorithm |
+| **Knight's Tour** | Visualised tour construction |
+| **Heatmap** | Distance-to-reach map for any piece |
+| **Playback** | Play / pause / step / restart with speed control |
+| **Board editor** | Obstacles, start/end, size 4–16 |
+| **Themes** | Light / dark / classic |
+| **Export** | CSV, JSON, PNG and shareable URLs |
+
+## 🛠 Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Front-end | Vanilla JavaScript, HTML5, CSS3 |
+| Assets | Maestro SVG piece set |
+| Hosting | GitHub Pages (`pages.yml`) |
+| CI | GitHub Actions |
+
+## 🏗 Architecture
+
+Algorithms are pure functions producing step traces; the UI replays traces on the board.
+
+```mermaid
+flowchart LR
+  CFG[Board config<br/>piece · size · obstacles · start/end] --> ALG[algorithms.js<br/>BFS · DFS · A* · Dijkstra · …]
+  ALG --> TR[Step traces + metrics]
+  TR --> UI[ui.js<br/>board renderer · playback]
+  APP[app.js<br/>modes · state · URL share] --> CFG
+  APP --> UI
+  TR --> EX[CSV · JSON · PNG export]
 ```
 
-Open: `http://localhost:8080`
+➡️ Full design notes, data flow and design decisions: **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**
 
-## Usage flow
-1. Select `Mode`.
-2. Set board size, piece, and start/end positions.
-3. Add obstacles with right-click.
-4. In `Path` mode, choose `Path Algorithm`.
-5. Click `Start / Calculate`.
-6. Review metrics and monitor feed.
-7. Export outputs (`CSV/JSON/PNG`) as needed.
+## 📁 Project Structure
 
-## Monitoring and feedback loop
-Use the **Monitor & Feedback** panel while testing:
-- Tracks state changes and run outcomes.
-- Captures runtime errors and unhandled rejections.
-- Use `Export Log` to share exact issues and traces.
+```text
+Chess-Algorithms-/
+├── index.html · styles.css
+├── app.js           # modes, state, sharing
+├── algorithms.js    # search algorithms + metrics
+├── ui.js            # rendering & playback
+├── assets/pieces/maestro/
+└── docs/screenshots/
+```
 
-## GitHub workflows
-This repo includes:
-- `.github/workflows/ci.yml`
-  - Syntax validation (`node --check`) for core JS files on push/PR.
-- `.github/workflows/pages.yml`
-  - Static deployment to GitHub Pages on `main`.
+## 🚀 Getting Started
 
-## Project structure
-- `index.html` - UI layout and control IDs.
-- `styles.css` - theme + component styling.
-- `ui.js` - board rendering and UI state toggles.
-- `algorithms.js` - algorithm implementations.
-- `app.js` - app controller, mode logic, monitoring, exports.
-- `docs/screenshots/` - screenshot assets used in README.
-- `assets/pieces/maestro/` - bundled chess piece SVG assets.
+### Prerequisites
 
-## Current quality target
-- Every visible control should trigger real behavior.
-- Every algorithm run should produce measurable stats.
-- Every failure should be visible in monitor feed.
+- Any modern browser
 
-## Next engineering upgrades
-- Add weighted-cell mode for richer Dijkstra/A* demos.
-- Add benchmark batch runner across randomized boards.
-- Add deterministic test fixtures for algorithm correctness snapshots.
-- Add accessibility pass (keyboard-only board control).
+### 1. Get the code
+
+Pick whichever method suits you:
+
+| Method | Command |
+|---|---|
+| **HTTPS** | `git clone https://github.com/shiroonigami23-ui/Chess-Algorithms-.git` |
+| **SSH** | `git clone git@github.com:shiroonigami23-ui/Chess-Algorithms-.git` |
+| **GitHub CLI** | `gh repo clone shiroonigami23-ui/Chess-Algorithms-` |
+| **ZIP** | [Download](https://github.com/shiroonigami23-ui/Chess-Algorithms-/archive/refs/heads/main.zip) and extract |
+| **Codespaces** | [Open in browser](https://codespaces.new/shiroonigami23-ui/Chess-Algorithms-?quickstart=1) — zero local setup, dev container preconfigured |
+
+> 🔑 **Using SSH for the first time?** Generate a key with `ssh-keygen -t ed25519 -C "you@example.com"`, add the `.pub` contents at **GitHub → Settings → SSH and GPG keys**, then test with `ssh -T git@github.com`.
+
+### 2. Install & set up
+
+```bash
+cd Chess-Algorithms-
+python3 -m http.server 8080      # open http://localhost:8080
+```
+
+### 3. Run
+
+Or use the live site: **https://shiroonigami23-ui.github.io/Chess-Algorithms-/**
+
+## 🗺 Roadmap
+
+**v1 — Lab (done)**
+
+- [x] 8 algorithms, 6 pieces, 6 modes
+- [x] Playback, themes, export, URL sharing, Pages deploy
+
+**v1.1**
+
+- [ ] Greedy best-first and IDA* algorithms
+- [ ] Weighted squares (terrain costs)
+- [ ] Step-by-step pseudo-code highlighting
+
+**v1.2**
+
+- [ ] Classroom mode with guided exercises
+- [ ] Benchmark suite across random boards with charts
+
+➡️ Detailed plan, milestones and long-term vision: **[docs/ROADMAP.md](docs/ROADMAP.md)**
+
+## 🤝 Contributing
+
+Contributions, issues and feature requests are welcome!
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit your changes: `git commit -m "feat: add amazing feature"`
+4. Push the branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request against `main`
+
+Check the [issues page](https://github.com/shiroonigami23-ui/Chess-Algorithms-/issues) and the [roadmap](docs/ROADMAP.md) for ideas on where to help.
+
+## 📜 Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for the release history.
+
+## 📄 License
+
+Distributed under the **MIT** license. See [LICENSE](LICENSE) for details.
+
+## 👤 Author
+
+**Aryan Singh Chandel** (Shiro)
+
+[![GitHub](https://img.shields.io/badge/GitHub-shiroonigami23--ui-181717?style=flat-square&logo=github)](https://github.com/shiroonigami23-ui)
+
+<div align="center">
+
+⭐ **If you find this project useful, consider giving it a star!** ⭐
+
+</div>

@@ -1,0 +1,8 @@
+{
+  "name": "Chess Algorithms Lab",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-20",
+  "postCreateCommand": "echo python3 -m http.server 8080",
+  "forwardPorts": [
+    8080
+  ]
+}
